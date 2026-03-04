@@ -1,0 +1,5 @@
+project_name          = "codecaine"
+environment           = "dev"
+key_name              = "your-key-name"
+bastion_instance_type = "t3.micro"
+my_ip                 = "0.0.0.0/0"
