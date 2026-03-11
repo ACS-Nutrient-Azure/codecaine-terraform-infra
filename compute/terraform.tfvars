@@ -67,3 +67,10 @@ bastion_allowed_cidrs = [
   "1.2.3.4/32", # 사무실 IP
   # "5.6.7.8/32", # 집 IP
 ]
+
+# ============================================
+# 배포할 서비스 설정 (ECR 이미지가 있는 서비스만)
+# ============================================
+# 주의: ECR에 이미지가 푸시된 서비스만 enabled_services에 추가하세요
+# 이미지가 없으면 Task Definition 생성 시 실패합니다
+enabled_services = ["frontend", "history", "mypage", "analysis", "chatbot"] # 예: ["frontend", "history", "mypage", "analysis", "chatbot"]

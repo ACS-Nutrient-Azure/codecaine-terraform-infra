@@ -7,17 +7,15 @@ app = Flask(__name__)
 def health():
     return jsonify({
         'status': 'healthy',
-        'service': 'codef'
+        'service': 'history'
     }), 200
 
-@app.route('/api/codef/data', methods=['GET'])
-def get_codef_data():
+@app.route('/history', methods=['GET'])
+def get_history():
     return jsonify({
-        'service': 'codef',
-        'message': 'CODEF API service is running',
-        'data': {
-            'sample': 'data'
-        },
+        'service': 'history',
+        'message': 'History service is running',
+        'data': [],
         'version': '1.0.0'
     }), 200
 

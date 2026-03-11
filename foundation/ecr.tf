@@ -4,11 +4,11 @@
 locals {
   # ECR 레포지토리 목록
   ecr_repositories = [
-    "codecaine-analysis",
-    "codecaine-frontend",
+    "codecaine-history",
     "codecaine-mypage",
     "codecaine-chatbot",
-    "codecaine-history"
+    "codecaine-analysis",
+    "codecaine-frontend"
   ]
 
   lifecycle_rules = [

@@ -5,14 +5,14 @@ const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
     res.json({
         status: 'healthy',
         service: 'frontend'
     });
 });
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
     res.json({
         service: 'frontend',
         message: 'Frontend service is running',

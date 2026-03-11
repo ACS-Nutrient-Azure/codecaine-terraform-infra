@@ -10,7 +10,15 @@ def health():
         'service': 'chatbot'
     }), 200
 
-@app.route('/api/chat', methods=['POST'])
+@app.route('/chatbot', methods=['GET'])
+def chatbot_root():
+    return jsonify({
+        'service': 'chatbot',
+        'message': 'Chatbot service is running',
+        'version': '1.0.0'
+    }), 200
+
+@app.route('/chatbot/chat', methods=['POST'])
 def chat():
     data = request.get_json() or {}
     message = data.get('message', '')

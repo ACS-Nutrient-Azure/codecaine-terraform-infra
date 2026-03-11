@@ -10,11 +10,19 @@ def health():
         'service': 'mypage'
     }), 200
 
-@app.route('/api/mypage/profile', methods=['GET'])
-def get_profile():
+@app.route('/mypage', methods=['GET'])
+def mypage_root():
     return jsonify({
         'service': 'mypage',
         'message': 'MyPage service is running',
+        'version': '1.0.0'
+    }), 200
+
+@app.route('/mypage/profile', methods=['GET'])
+def get_profile():
+    return jsonify({
+        'service': 'mypage',
+        'message': 'MyPage profile endpoint',
         'profile': {
             'user': 'sample_user',
             'email': 'user@example.com'

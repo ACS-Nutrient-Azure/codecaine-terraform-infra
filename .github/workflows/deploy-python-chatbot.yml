@@ -1,4 +1,4 @@
-name: Deploy TypeScript Service to ECS
+name: Deploy Chatbot Service to ECS
 
 on:
   push:
@@ -6,41 +6,24 @@ on:
       - main
       - develop
     paths:
-      - 'services/typescript/**'
-      - '.github/workflows/deploy-typescript.yml'
+      - 'services/python/chatbot/**'
+      - '.github/workflows/deploy-python-chatbot.yml'
   workflow_dispatch:
-    inputs:
-      service_name:
-        description: 'Service to deploy (frontend)'
-        required: true
-        type: choice
-        options:
-          - frontend
 
 env:
   AWS_REGION: ap-northeast-2
   ECR_REGISTRY: 365827924759.dkr.ecr.ap-northeast-2.amazonaws.com
+  SERVICE_NAME: chatbot
+  ECR_REPOSITORY: codecaine-chatbot
 
 jobs:
-  deploy:
-    name: Build and Deploy TypeScript Service
+  deploy-chatbot:
+    name: Deploy Chatbot Service
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Determine service name
-        id: service 
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            SERVICE="${{ github.event.inputs.service_name }}"
-          else
-            # Auto-detect from changed files
-            SERVICE="frontend"  # Default
-          fi
-          echo "name=$SERVICE" >> $GITHUB_OUTPUT
-          echo "ecr_repo=codecaine-$SERVICE" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,18 +39,19 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
-          ECR_REPOSITORY: ${{ steps.service.outputs.ecr_repo }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           # 타임스탬프 생성 (UTC)
           TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
           
+          echo "🔨 Building ${{ env.SERVICE_NAME }} service..."
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$TIMESTAMP \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            -f services/typescript/${{ steps.service.outputs.name }}/Dockerfile \
-            services/typescript/${{ steps.service.outputs.name }}
+            -f services/python/${{ env.SERVICE_NAME }}/Dockerfile \
+            services/python/${{ env.SERVICE_NAME }}
           
+          echo "📤 Pushing images to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TIMESTAMP
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
@@ -79,7 +63,7 @@ jobs:
         id: check-task-def
         run: |
           if aws ecs describe-task-definition \
-            --task-definition cdci-prd-${{ steps.service.outputs.name }} \
+            --task-definition cdci-prd-${{ env.SERVICE_NAME }} \
             --query taskDefinition > task-definition.json 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "✅ Task definition exists, will update and deploy"
@@ -87,7 +71,7 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "⚠️ Task definition does not exist yet"
             echo "📋 Infrastructure must be deployed first using Terraform"
-            echo "   Run: cd terraform/environments/prd && terraform apply"
+            echo "   Run: cd compute && terraform apply"
           fi
 
       - name: Fill in the new image ID in the Amazon ECS task definition
@@ -96,7 +80,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
-          container-name: ${{ steps.service.outputs.name }}
+          container-name: ${{ env.SERVICE_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
       - name: Deploy Amazon ECS task definition
@@ -105,7 +89,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: cdci-prd-${{ steps.service.outputs.name }}-service
+          service: cdci-prd-${{ env.SERVICE_NAME }}-service
           cluster: cdci-prd-cluster
           wait-for-service-stability: true
 
@@ -113,26 +97,26 @@ jobs:
         if: steps.check-task-def.outputs.exists == 'true'
         run: |
           echo "🚀 Deployment completed!"
-          echo "Service: ${{ steps.service.outputs.name }}"
+          echo "Service: ${{ env.SERVICE_NAME }}"
           echo "Image: ${{ steps.build-image.outputs.image }}"
           echo "Timestamp: ${{ steps.build-image.outputs.timestamp }}"
           
           # Get service status
           aws ecs describe-services \
             --cluster cdci-prd-cluster \
-            --services cdci-prd-${{ steps.service.outputs.name }}-service \
+            --services cdci-prd-${{ env.SERVICE_NAME }}-service \
             --query 'services[0].[serviceName,status,runningCount,desiredCount]' \
             --output table
           
           # Get task status
           TASK_ARN=$(aws ecs list-tasks \
             --cluster cdci-prd-cluster \
-            --service-name cdci-prd-${{ steps.service.outputs.name }}-service \
+            --service-name cdci-prd-${{ env.SERVICE_NAME }}-service \
             --desired-status RUNNING \
             --query 'taskArns[0]' \
             --output text)
           
-          if [ "$TASK_ARN" != "None" ]; then
+          if [ "$TASK_ARN" != "None" ] && [ "$TASK_ARN" != "" ]; then
             echo "✅ Task is running: $TASK_ARN"
             aws ecs describe-tasks \
               --cluster cdci-prd-cluster \
@@ -147,13 +131,13 @@ jobs:
         if: always()
         run: |
           if [ "${{ steps.check-task-def.outputs.exists }}" == "false" ]; then
-            echo "⚠️ Skipped deployment for ${{ steps.service.outputs.name }}"
+            echo "⚠️ Skipped deployment for ${{ env.SERVICE_NAME }}"
             echo "📋 Image built and pushed to ECR: ${{ steps.build-image.outputs.image }}"
-            echo "🏗️ Deploy infrastructure first: cd terraform/environments/prd && terraform apply"
+            echo "🏗️ Deploy infrastructure first: cd compute && terraform apply"
             exit 0
           elif [ "${{ steps.deploy.outcome }}" == "success" ]; then
-            echo "✅ Deployment successful for ${{ steps.service.outputs.name }}"
+            echo "✅ Deployment successful for ${{ env.SERVICE_NAME }}"
           else
-            echo "❌ Deployment failed for ${{ steps.service.outputs.name }}"
+            echo "❌ Deployment failed for ${{ env.SERVICE_NAME }}"
             exit 1
           fi

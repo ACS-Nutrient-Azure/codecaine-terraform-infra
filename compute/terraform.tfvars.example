@@ -39,6 +39,14 @@ task_cpu    = "256"
 task_memory = "512"
 image_tag   = "latest"
 
+# Service Deployment Configuration
+# ECR 이미지가 있는 서비스만 enabled_services에 추가하세요
+# 사용 가능한 서비스: history, mypage, analysis, chatbot, frontend
+enabled_services = ["frontend"]
+
+# 여러 서비스 배포 예시:
+# enabled_services = ["frontend", "chatbot", "history"]
+
 container_name = "app"
 container_port = 8080
 desired_count  = 1

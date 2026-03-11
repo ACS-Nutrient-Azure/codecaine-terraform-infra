@@ -21,11 +21,7 @@ output "alb_zone_id" {
 output "target_group_arns" {
   description = "Target Group ARNs"
   value = {
-    history  = aws_lb_target_group.history.arn
-    mypage   = aws_lb_target_group.mypage.arn
-    analysis = aws_lb_target_group.analysis.arn
-    chatbot  = aws_lb_target_group.chatbot.arn
-    frontend = aws_lb_target_group.frontend.arn
+    for k, v in aws_lb_target_group.services : k => v.arn
   }
 }
 
@@ -39,19 +35,30 @@ output "ecs_cluster_name" {
   value       = aws_ecs_cluster.main.name
 }
 
-output "ecs_service_name" {
-  description = "ECS Service name"
-  value       = aws_ecs_service.app.name
+output "ecs_service_names" {
+  description = "ECS Service names"
+  value = {
+    for k, v in aws_ecs_service.services : k => v.name
+  }
 }
 
-output "ecs_task_definition_arn" {
-  description = "ECS Task Definition ARN"
-  value       = aws_ecs_task_definition.app.arn
+output "ecs_task_definition_arns" {
+  description = "ECS Task Definition ARNs"
+  value = {
+    for k, v in aws_ecs_task_definition.services : k => v.arn
+  }
 }
 
-output "cloudwatch_log_group_name" {
-  description = "CloudWatch Log Group name"
-  value       = aws_cloudwatch_log_group.ecs.name
+output "cloudwatch_log_group_names" {
+  description = "CloudWatch Log Group names"
+  value = {
+    for k, v in aws_cloudwatch_log_group.services : k => v.name
+  }
+}
+
+output "services_with_images" {
+  description = "Services that have images in ECR and were deployed"
+  value       = keys(local.services_to_deploy)
 }
 
 # Network Outputs (독립 모드)
@@ -78,21 +85,6 @@ output "alb_security_group_id" {
 output "ecs_tasks_security_group_id" {
   description = "ECS tasks security group ID"
   value       = local.ecs_tasks_security_group_id
-}
-
-# ECR Outputs
-output "ecr_repository_urls" {
-  description = "ECR repository URLs"
-  value = {
-    for name, repo in aws_ecr_repository.repositories : name => repo.repository_url
-  }
-}
-
-output "ecr_repository_arns" {
-  description = "ECR repository ARNs"
-  value = {
-    for name, repo in aws_ecr_repository.repositories : name => repo.arn
-  }
 }
 
 # Bastion Host Outputs

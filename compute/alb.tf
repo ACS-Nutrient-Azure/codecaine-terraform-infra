@@ -21,9 +21,32 @@ resource "aws_lb" "main" {
 }
 
 # Target Groups for each service
-resource "aws_lb_target_group" "history" {
-  name        = lower("${var.project_name}-${var.environment}-history-tg")
-  port        = 8080
+resource "aws_lb_target_group" "services" {
+  for_each = {
+    history = {
+      port        = 8080
+      health_path = "/health"
+    }
+    mypage = {
+      port        = 8080
+      health_path = "/health"
+    }
+    analysis = {
+      port        = 8080
+      health_path = "/health"
+    }
+    chatbot = {
+      port        = 8080
+      health_path = "/health"
+    }
+    frontend = {
+      port        = 8080
+      health_path = "/health"
+    }
+  }
+
+  name        = lower("${var.project_name}-${var.environment}-${each.key}-tg")
+  port        = each.value.port
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
   target_type = "ip"
@@ -34,7 +57,7 @@ resource "aws_lb_target_group" "history" {
     unhealthy_threshold = 3
     timeout             = 5
     interval            = 30
-    path                = "/health"
+    path                = each.value.health_path
     protocol            = "HTTP"
     matcher             = "200"
   }
@@ -42,112 +65,8 @@ resource "aws_lb_target_group" "history" {
   deregistration_delay = 30
 
   tags = {
-    Name    = "${upper(var.project_name)}-${upper(var.environment)}-HISTORY-TG"
-    Service = "history"
-  }
-}
-
-resource "aws_lb_target_group" "mypage" {
-  name        = lower("${var.project_name}-${var.environment}-mypage-tg")
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = local.vpc_id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 30
-    path                = "/health"
-    protocol            = "HTTP"
-    matcher             = "200"
-  }
-
-  deregistration_delay = 30
-
-  tags = {
-    Name    = "${upper(var.project_name)}-${upper(var.environment)}-MYPAGE-TG"
-    Service = "mypage"
-  }
-}
-
-resource "aws_lb_target_group" "analysis" {
-  name        = lower("${var.project_name}-${var.environment}-analysis-tg")
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = local.vpc_id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 30
-    path                = "/health"
-    protocol            = "HTTP"
-    matcher             = "200"
-  }
-
-  deregistration_delay = 30
-
-  tags = {
-    Name    = "${upper(var.project_name)}-${upper(var.environment)}-ANALYSIS-TG"
-    Service = "analysis"
-  }
-}
-
-resource "aws_lb_target_group" "chatbot" {
-  name        = lower("${var.project_name}-${var.environment}-chatbot-tg")
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = local.vpc_id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 30
-    path                = "/health"
-    protocol            = "HTTP"
-    matcher             = "200"
-  }
-
-  deregistration_delay = 30
-
-  tags = {
-    Name    = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-TG"
-    Service = "chatbot"
-  }
-}
-
-resource "aws_lb_target_group" "frontend" {
-  name        = lower("${var.project_name}-${var.environment}-frontend-tg")
-  port        = 3000
-  protocol    = "HTTP"
-  vpc_id      = local.vpc_id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 30
-    path                = "/health"
-    protocol            = "HTTP"
-    matcher             = "200"
-  }
-
-  deregistration_delay = 30
-
-  tags = {
-    Name    = "${upper(var.project_name)}-${upper(var.environment)}-FRONTEND-TG"
-    Service = "frontend"
+    Name    = "${upper(var.project_name)}-${upper(var.environment)}-${upper(each.key)}-TG"
+    Service = each.key
   }
 }
 
@@ -178,71 +97,42 @@ resource "aws_lb_listener" "https" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
+    target_group_arn = aws_lb_target_group.services["frontend"].arn
   }
 }
 
 # Listener Rules for path-based routing
-resource "aws_lb_listener_rule" "history" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 100
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.history.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/history", "/history/*"]
+resource "aws_lb_listener_rule" "services" {
+  for_each = {
+    history = {
+      priority = 100
+      paths    = ["/api/history", "/api/history/*"]
+    }
+    mypage = {
+      priority = 200
+      paths    = ["/api/mypage", "/api/mypage/*"]
+    }
+    analysis = {
+      priority = 300
+      paths    = ["/api/analysis", "/api/analysis/*"]
+    }
+    chatbot = {
+      priority = 400
+      paths    = ["/api/chatbot", "/api/chatbot/*"]
     }
   }
-}
 
-resource "aws_lb_listener_rule" "mypage" {
   listener_arn = aws_lb_listener.https.arn
-  priority     = 200
+  priority     = each.value.priority
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.mypage.arn
+    target_group_arn = aws_lb_target_group.services[each.key].arn
   }
 
   condition {
     path_pattern {
-      values = ["/mypage", "/mypage/*"]
-    }
-  }
-}
-
-resource "aws_lb_listener_rule" "analysis" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 300
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.analysis.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/analysis", "/analysis/*"]
-    }
-  }
-}
-
-resource "aws_lb_listener_rule" "chatbot" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 400
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.chatbot.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/chatbot", "/chatbot/*"]
+      values = each.value.paths
     }
   }
 }

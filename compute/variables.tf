@@ -235,6 +235,20 @@ variable "ecr_repository_name" {
   default     = "codecaine-frontend"
 }
 
+# Service Deployment Configuration
+variable "enabled_services" {
+  description = "List of services to deploy (only services with ECR images should be enabled)"
+  type        = list(string)
+  default     = []
+  validation {
+    condition = alltrue([
+      for service in var.enabled_services :
+      contains(["history", "mypage", "analysis", "chatbot", "frontend"], service)
+    ])
+    error_message = "Enabled services must be one of: history, mypage, analysis, chatbot, frontend"
+  }
+}
+
 # Deprecated ECR variables (kept for backward compatibility)
 variable "use_existing_ecr" {
   description = "Use existing ECR repository (false = create new ECR)"
