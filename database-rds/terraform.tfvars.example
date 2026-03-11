@@ -1,0 +1,46 @@
+# 기존 VPC 사용 (foundation 모듈의 VPC 사용)
+# 이 파일을 terraform.tfvars로 복사하여 사용하세요
+
+project_name = "myapp"
+environment  = "dev"
+region       = "ap-northeast-2"
+
+# PostgreSQL Configuration
+postgres_port = 5432
+
+# Aurora PostgreSQL Clusters (3개 클러스터 - 각각 다른 역할)
+aurora_postgres_version = "15.4"
+enable_global_database  = false
+
+aurora_clusters = {
+  cluster1 = {
+    cluster_identifier      = "app-cluster1"
+    instance_class          = "db.serverless" # Serverless v2
+    instance_count          = 2               # Writer 1개 + Reader 1개
+    database_name           = "appdb1"
+    master_username         = "dbadmin"
+    backup_retention        = 7
+    serverless_min_capacity = 0.5 # 최소 0.5 ACU
+    serverless_max_capacity = 2   # 최대 2 ACU
+  }
+  cluster2 = {
+    cluster_identifier      = "app-cluster2"
+    instance_class          = "db.serverless"
+    instance_count          = 2
+    database_name           = "appdb2"
+    master_username         = "dbadmin"
+    backup_retention        = 7
+    serverless_min_capacity = 0.5
+    serverless_max_capacity = 2
+  }
+  cluster3 = {
+    cluster_identifier      = "app-cluster3"
+    instance_class          = "db.serverless"
+    instance_count          = 2
+    database_name           = "appdb3"
+    master_username         = "dbadmin"
+    backup_retention        = 7
+    serverless_min_capacity = 0.5
+    serverless_max_capacity = 2
+  }
+}

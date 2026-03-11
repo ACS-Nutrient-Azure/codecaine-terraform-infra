@@ -1,3 +1,3 @@
-project_name      = "codecaine"
-environment       = "dev"
-nat_gateway_count = 1
+project_name = "cdci" # CodeCaine 팀 약어
+environment  = "prd"
+region       = "ap-northeast-2"

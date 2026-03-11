@@ -10,12 +10,6 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Environment"
+  description = "Environment (dev/stg/prd)"
   type        = string
-}
-
-variable "nat_gateway_count" {
-  description = "Number of NAT Gateways (1 or 2)"
-  type        = number
-  default     = 1
 }

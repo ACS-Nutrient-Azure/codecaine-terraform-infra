@@ -1,0 +1,73 @@
+# 독립 실행 모드 예제
+# 이 파일을 terraform.tfvars로 복사하여 사용하세요
+
+project_name = "myapp"
+environment  = "dev"
+region       = "ap-northeast-2"
+
+# ============================================
+# 독립 실행 모드 (새 VPC 생성)
+# ============================================
+use_existing_vpc = false
+use_existing_ecr = false
+
+# VPC Configuration
+vpc_cidr                 = "10.0.0.0/16"
+availability_zones       = ["ap-northeast-2a", "ap-northeast-2c"]
+public_subnet_cidrs      = ["10.0.1.0/24", "10.0.2.0/24"]
+private_app_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
+enable_nat_gateway       = true
+
+# ============================================
+# 기존 VPC 사용 모드 (foundation 모듈 연동)
+# ============================================
+# use_existing_vpc                     = true
+# existing_vpc_id                      = "vpc-xxxxx"
+# existing_public_subnet_ids           = ["subnet-xxxxx", "subnet-yyyyy"]
+# existing_private_app_subnet_ids      = ["subnet-xxxxx", "subnet-yyyyy"]
+# existing_alb_security_group_id       = "sg-xxxxx"
+# existing_ecs_tasks_security_group_id = "sg-yyyyy"
+
+# ============================================
+# 기존 ECR 사용 모드 (storage 모듈 연동)
+# ============================================
+# use_existing_ecr            = true
+# existing_ecr_repository_url = "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/myapp-dev"
+
+# ECS Configuration
+task_cpu    = "256"
+task_memory = "512"
+image_tag   = "latest"
+
+container_name = "app"
+container_port = 8080
+desired_count  = 1
+
+health_check_path = "/health"
+
+environment_variables = [
+  {
+    name  = "ENV"
+    value = "dev"
+  }
+]
+
+# Auto Scaling
+min_capacity               = 1
+max_capacity               = 4
+cpu_target_value           = 70
+memory_target_value        = 80
+request_count_target_value = 1000
+
+# Monitoring
+enable_container_insights = false
+log_retention_days        = 7
+enable_ecs_exec           = true
+
+# ALB Configuration
+certificate_arn = "" # ACM 인증서 ARN (HTTPS 사용 시)
+
+# Bastion Host
+bastion_instance_type = "t3.micro"
+bastion_key_name      = "codecaine" # 기존 EC2 키 페어 이름 (codecaine.pem)
+bastion_allowed_cidrs = ["1.2.3.4/32"] # 접속 허용 IP
