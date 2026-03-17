@@ -141,7 +141,7 @@ Bastion 호스트는 Private 리소스(RDS, ECS)에 안전하게 접근하기 �
 **접근 제어**:
 - SSH 포트: 22
 - 허용 IP: `1.2.3.4/32` (사무실 IP)
-- 키 페어: codecaine.pem
+- 키 페어: tera-test.pem
 
 **설치된 소프트웨어**:
 - PostgreSQL 15 클라이언트 (RDS 접속용)
@@ -289,7 +289,7 @@ ECS Tasks (Private App Subnet) → RDS Aurora (Private DB Subnet)
 개발자 PC → Bastion (Public Subnet) → RDS Aurora (Private DB Subnet)
 ```
 
-1. 개발자가 SSH로 Bastion 접속 (codecaine.pem 키 사용)
+1. 개발자가 SSH로 Bastion 접속 (tera-test.pem 키 사용)
 2. Bastion에서 PostgreSQL 클라이언트로 RDS 접속
 3. CDCI-DEV-RDS-SG가 Public Subnet CIDR에서 오는 트래픽 허용
 

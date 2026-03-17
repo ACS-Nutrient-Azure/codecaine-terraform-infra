@@ -2,7 +2,7 @@
 
 ECS Fargate 기반 웹서비스 인프라 (Terraform)
 
-> **최신 업데이트**: Bastion 서버, Aurora Global Database, DynamoDB Global Table 지원 추가
+> **최신 업데이트**: Bastion 서버, Aurora Global Database 지원 추가
 > **팀**: CodeCaine (CDCI)
 
 ## 네이밍 규칙
@@ -46,7 +46,7 @@ WAF → ALB (Public Subnet) ← Bastion Host (SSH 접근)
     ↓
 ECS Fargate Tasks (Private Subnet) ↔ ECS Tasks (마이크로서비스 간 통신)
     ↓
-Aurora PostgreSQL Global DB + DynamoDB Global Table (Private DB Subnet)
+Aurora PostgreSQL Global DB (Private DB Subnet)
     ↓
 다중 리전 복제 (글로벌 확장)
 ```
@@ -63,12 +63,7 @@ Aurora PostgreSQL Global DB + DynamoDB Global Table (Private DB Subnet)
 - Serverless v2 자동 스케일링
 - 다중 리전 복제 (1초 미만 지연)
 
-### ✅ 3. DynamoDB Global Table
-- 다중 리전 자동 복제
-- 글로벌 낮은 지연시간
-- 재해 복구 (DR)
-
-### ✅ 4. 보안 그룹 개선
+### ✅ 3. 보안 그룹 개선
 - ECS 간 통신 허용 (self 참조)
 - Bastion → DB 접근 허용
 - 최소 권한 원칙 적용
@@ -89,10 +84,9 @@ Aurora PostgreSQL Global DB + DynamoDB Global Table (Private DB Subnet)
 |------|--------|--------------|------|
 | **nat/** | NAT Gateway | ~$32 (1개) | Private 서브넷 아웃바운드 |
 | **database-rds/** | Aurora PostgreSQL | ~$43-172 | Aurora Serverless v2 |
-| **database-dynamodb/** | DynamoDB Global Table | ~$2-20 | NoSQL 데이터베이스 |
 | **compute/** | ECS Fargate, ALB, Bastion | ~$37 | 웹서비스 + 관리 서버 |
 
-**총 예상 비용**: ~$114-261/month (Aurora 스케일링에 따라 변동)
+**총 예상 비용**: ~$112-241/month (Aurora 스케일링에 따라 변동)
 
 ## 배포 순서
 
@@ -138,16 +132,7 @@ terraform init
 terraform apply
 ```
 
-### 6. Database - DynamoDB Global Table (선택)
-```bash
-cd database-dynamodb
-# terraform.tfvars에서 enable_global_table 설정
-# 테이블명: ChatbotData (실제: cdci-prd-ChatbotData)
-terraform init
-terraform apply
-```
-
-### 7. Compute (ECS, ALB, Bastion)
+### 6. Compute (ECS, ALB, Bastion)
 ```bash
 cd compute
 # use_existing_vpc = true 설정 (foundation VPC 사용)
@@ -257,9 +242,8 @@ cd ../nat && terraform destroy
 - RDS: db.t3.micro × 3, Single-AZ (~$50/month)
 - ECS: 0.25 vCPU + 0.5 GB × 1 task (~$9/month)
 - ALB: (~$20/month)
-- DynamoDB: PAY_PER_REQUEST (사용량 기반)
 
-**최소 비용**: ~$110/month
+**최소 비용**: ~$108/month
 
 ### 프로덕션 구성
 - NAT Gateway: 2개 (HA) (~$64/month)
@@ -308,24 +292,8 @@ aws secretsmanager get-secret-value \
   --query SecretString --output text | jq -r .password
 ```
 
-### DynamoDB Global Table
-```python
-import boto3
-
-# 가장 가까운 리전에서 자동 접속
-dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
-table = dynamodb.Table('cdci-prd-ChatbotData')
-
-# Put item (모든 리전에 자동 복제)
-table.put_item(Item={'id': '123', 'timestamp': 1234567890})
-
-# Get item (로컬 리전에서 읽기)
-response = table.get_item(Key={'id': '123', 'timestamp': 1234567890})
-```
-
-## Aurora Global Database 설정
-
-### 1. 주 리전에서 Global Database 생성
+### Aurora PostgreSQL
+```bash
 ```hcl
 # database-rds/terraform.tfvars
 enable_global_database = true
@@ -337,18 +305,6 @@ enable_global_database = true
 cd database-rds-secondary
 terraform workspace new us-east-1
 terraform apply
-```
-
-## DynamoDB Global Table 설정
-
-```hcl
-# database-dynamodb/terraform.tfvars
-enable_global_table = true
-global_table_regions = [
-  "ap-northeast-2",  # 서울 (주 리전)
-  "us-east-1",       # 버지니아
-  "eu-west-1"        # 아일랜드
-]
 ```
 
 ## 트러블슈팅
@@ -368,11 +324,6 @@ global_table_regions = [
 1. Bastion에서 접속 가능한지 확인
 2. 보안그룹 규칙 확인 (ECS, Bastion → Aurora)
 3. Secrets Manager에서 자격 증명 확인
-
-### DynamoDB Global Table 복제 지연
-1. CloudWatch 메트릭 확인 (`ReplicationLatency`)
-2. 리전 간 네트워크 상태 확인
-3. 쓰기 용량 확인 (스로틀링 여부)
 
 ### Health Check 실패
 1. Health Check Path 확인 (`/health`)
@@ -401,7 +352,6 @@ cd ../foundation && terraform destroy
 - [리팩토링 상세 가이드](REFACTORING_SUMMARY.md)
 - [AWS ECS Best Practices](https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/)
 - [Aurora Global Database](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html)
-- [DynamoDB Global Tables](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GlobalTables.html)
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 

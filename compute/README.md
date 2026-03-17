@@ -78,7 +78,7 @@ use_existing_vpc = true
 
 ### 2. SSH 키 준비 (Bastion용)
 
-기존 EC2 키 페어를 사용합니다 (예: codecaine.pem).
+기존 EC2 키 페어를 사용합니다 (예: tera-test.pem).
 
 ```bash
 # AWS 콘솔에서 키 페어가 이미 생성되어 있어야 합니다
@@ -158,8 +158,8 @@ aws ecs list-tasks \
 ### SSH 접속
 
 ```bash
-# codecaine.pem 키를 사용하여 접속
-ssh -i ~/.ssh/codecaine.pem ec2-user@$(terraform output -raw bastion_public_ip)
+# tera-test.pem 키를 사용하여 접속
+ssh -i ~/.ssh/tera-test.pem ec2-user@$(terraform output -raw bastion_public_ip)
 ```
 
 ### ECS Exec (컨테이너 디버깅)

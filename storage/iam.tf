@@ -13,7 +13,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-github-oidc"
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-GITHUB-OIDC"
   }
 }
 
@@ -21,7 +21,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 resource "aws_iam_role" "github_actions" {
   count = var.create_github_oidc ? 1 : 0
 
-  name = "${var.project_name}-${var.environment}-github-actions-role"
+  name = "${upper(var.project_name)}-${upper(var.environment)}-GITHUB-ACTIONS-ROLE"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -45,7 +45,7 @@ resource "aws_iam_role" "github_actions" {
   })
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-github-actions-role"
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-GITHUB-ACTIONS-ROLE"
   }
 }
 
@@ -77,7 +77,7 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload"
         ]
-        Resource = aws_ecr_repository.app.arn
+        Resource = "arn:aws:ecr:${var.region}:*:repository/cdci-*"
       }
     ]
   })

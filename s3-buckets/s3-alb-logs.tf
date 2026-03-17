@@ -3,11 +3,11 @@ resource "aws_s3_bucket" "alb_logs" {
   bucket = "${var.project_name}-${var.environment}-alb-logs"
 
   tags = {
-    Name = "${upper(var.project_name)}-${upper(var.environment)}-ALB-LOGS"
+    Name    = "${upper(var.project_name)}-${upper(var.environment)}-ALB-LOGS"
+    Purpose = "ALB Access Logs Storage"
   }
 }
 
-# S3 Bucket Versioning
 resource "aws_s3_bucket_versioning" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
@@ -16,7 +16,6 @@ resource "aws_s3_bucket_versioning" "alb_logs" {
   }
 }
 
-# S3 Bucket Server-Side Encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
@@ -27,7 +26,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
   }
 }
 
-# S3 Bucket Public Access Block
 resource "aws_s3_bucket_public_access_block" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
@@ -37,7 +35,6 @@ resource "aws_s3_bucket_public_access_block" "alb_logs" {
   restrict_public_buckets = true
 }
 
-# S3 Bucket Lifecycle Configuration
 resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
@@ -53,7 +50,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
   }
 }
 
-# S3 Bucket Policy for ALB Access Logs
 data "aws_elb_service_account" "main" {}
 
 resource "aws_s3_bucket_policy" "alb_logs" {

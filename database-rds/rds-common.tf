@@ -48,7 +48,7 @@ resource "aws_db_parameter_group" "aurora" {
 
 # Enhanced Monitoring IAM Role (공통)
 resource "aws_iam_role" "rds_monitoring" {
-  name = "${var.project_name}-${var.environment}-rds-monitoring"
+  name = "${upper(var.project_name)}-${upper(var.environment)}-RDS-MONITORING-ROLE"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -64,7 +64,7 @@ resource "aws_iam_role" "rds_monitoring" {
   })
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-rds-monitoring"
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-RDS-MONITORING-ROLE"
   }
 }
 

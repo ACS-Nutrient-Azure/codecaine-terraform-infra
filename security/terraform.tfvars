@@ -3,7 +3,8 @@ environment  = "prd"
 region       = "ap-northeast-2"
 
 # Domain 설정
-domain_name = "codecaine.yujeong91.shop"
+domain_name      = "yujeong91.shop" # Route53 Zone 및 ACM 루트 도메인
+subdomain_prefix = "codecaine"      # 실제 서비스 서브도메인 (codecaine.yujeong91.shop)
 
 # ============================================
 # Route53 설정
@@ -12,8 +13,13 @@ domain_name = "codecaine.yujeong91.shop"
 # Zone ID: Z009220527NRWAL7GBEUE
 # ACM Certificate ARN: arn:aws:acm:ap-northeast-2:365827924759:certificate/3a49a205-d9b8-414a-9292-4c79002d6794
 # ============================================
-create_route53_zone = false
-route53_zone_id     = "Z009220527NRWAL7GBEUE"
+create_route53_zone = true
+route53_zone_id     = "" # 신규 생성 시 불필요
+
+# ACM 설정
+# create_acm_cert = true: 신규 발급 (DNS 검증, 약 5-10분 소요)
+# create_acm_cert = false: 기존 인증서 참조
+create_acm_cert = true
 
 # WAF 설정
 enable_waf = true

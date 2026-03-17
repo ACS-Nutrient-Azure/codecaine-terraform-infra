@@ -1,11 +1,28 @@
 # Storage Infrastructure
 
-ECR 및 GitHub Actions 연동 설정
+ECR, S3 버킷 및 GitHub Actions 연동 설정
 
 ## 포함 리소스
 
+### ECR
 - ECR Repository (컨테이너 이미지 저장소)
 - ECR Lifecycle Policy (이미지 자동 정리)
+
+### S3 Buckets
+- **knowledgebase**: 지식 베이스 데이터 저장
+  - Versioning 활성화
+  - 90일 후 Standard-IA로 전환
+  - 이전 버전 90일 후 삭제
+- **codef-api**: Codef API 관련 데이터 저장
+  - Versioning 활성화
+  - 365일 후 데이터 삭제
+  - 이전 버전 30일 후 삭제
+- **monitoring**: 모니터링 데이터 저장
+  - Versioning 활성화
+  - 30일 후 Glacier로 전환
+  - 180일 후 데이터 삭제
+
+### GitHub Actions
 - GitHub OIDC Provider (선택)
 - GitHub Actions IAM Role (선택)
 
@@ -62,3 +79,28 @@ jobs:
 
 - GitHub OIDC를 사용하지 않으려면 `create_github_oidc = false` 설정
 - ECR은 비용이 거의 없지만 저장 용량에 따라 과금됨
+- S3 버킷은 모두 암호화(AES256) 및 Public Access Block 적용됨
+- 각 버킷은 용도에 맞는 Lifecycle 정책이 설정되어 있음
+
+## S3 버킷 사용 예시
+
+### Knowledge Base 버킷
+```bash
+# 파일 업로드
+aws s3 cp knowledge-data.json s3://myapp-prd-knowledgebase/data/
+
+# 파일 다운로드
+aws s3 cp s3://myapp-prd-knowledgebase/data/knowledge-data.json ./
+```
+
+### Codef API 버킷
+```bash
+# API 응답 저장
+aws s3 cp api-response.json s3://myapp-prd-codef-api/responses/$(date +%Y%m%d)/
+```
+
+### Monitoring 버킷
+```bash
+# 로그 업로드
+aws s3 cp application.log s3://myapp-prd-monitoring/logs/$(date +%Y%m%d)/
+```

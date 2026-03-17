@@ -44,8 +44,3 @@ variable "private_db_subnet_cidrs" {
   default     = ["10.0.20.0/24", "10.0.21.0/24"]
 }
 
-variable "bastion_allowed_cidrs" {
-  description = "CIDR blocks allowed to access Bastion host"
-  type        = list(string)
-  default     = ["0.0.0.0/0"]
-}

@@ -10,8 +10,9 @@ resource "aws_lb" "main" {
   enable_http2                     = true
   enable_cross_zone_load_balancing = true
 
+  # ALB 로그는 s3-buckets 모듈 배포 후 활성화
   access_logs {
-    bucket  = aws_s3_bucket.alb_logs.bucket
+    bucket  = data.terraform_remote_state.s3_buckets.outputs.alb_logs_bucket_name
     enabled = true
   }
 
@@ -21,29 +22,37 @@ resource "aws_lb" "main" {
 }
 
 # Target Groups for each service
-resource "aws_lb_target_group" "services" {
-  for_each = {
+locals {
+  all_target_groups = {
+    users = {
+      port        = 8000
+      health_path = "/health"
+    }
     history = {
-      port        = 8080
-      health_path = "/health"
-    }
-    mypage = {
-      port        = 8080
-      health_path = "/health"
-    }
-    analysis = {
-      port        = 8080
+      port        = 8000
       health_path = "/health"
     }
     chatbot = {
-      port        = 8080
+      port        = 8000
+      health_path = "/health"
+    }
+    analysis = {
+      port        = 8000
       health_path = "/health"
     }
     frontend = {
       port        = 8080
-      health_path = "/health"
+      health_path = "/"
     }
   }
+  target_groups = {
+    for k, v in local.all_target_groups : k => v
+    if contains(var.enabled_services, k)
+  }
+}
+
+resource "aws_lb_target_group" "services" {
+  for_each = local.target_groups
 
   name        = lower("${var.project_name}-${var.environment}-${each.key}-tg")
   port        = each.value.port
@@ -93,7 +102,7 @@ resource "aws_lb_listener" "https" {
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.certificate_arn
+  certificate_arn   = data.terraform_remote_state.security.outputs.acm_certificate_arn
 
   default_action {
     type             = "forward"
@@ -104,22 +113,24 @@ resource "aws_lb_listener" "https" {
 # Listener Rules for path-based routing
 resource "aws_lb_listener_rule" "services" {
   for_each = {
-    history = {
-      priority = 100
-      paths    = ["/api/history", "/api/history/*"]
-    }
-    mypage = {
-      priority = 200
-      paths    = ["/api/mypage", "/api/mypage/*"]
-    }
-    analysis = {
-      priority = 300
-      paths    = ["/api/analysis", "/api/analysis/*"]
-    }
-    chatbot = {
-      priority = 400
-      paths    = ["/api/chatbot", "/api/chatbot/*"]
-    }
+    for k, v in {
+      history = {
+        priority = 100
+        paths    = ["/api/history", "/api/history/*"]
+      }
+      users = {
+        priority = 200
+        paths    = ["/api/mypage", "/api/mypage/*"]
+      }
+      analysis = {
+        priority = 300
+        paths    = ["/api/analysis", "/api/analysis/*"]
+      }
+      chatbot = {
+        priority = 400
+        paths    = ["/api/chatbot", "/api/chatbot/*"]
+      }
+    } : k => v if contains(var.enabled_services, k)
   }
 
   listener_arn = aws_lb_listener.https.arn

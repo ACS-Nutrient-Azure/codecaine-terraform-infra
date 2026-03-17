@@ -14,14 +14,8 @@ variable "environment" {
   type        = string
 }
 
-variable "create_github_oidc" {
-  description = "Create GitHub OIDC provider and role"
-  type        = bool
-  default     = true
-}
-
-variable "github_repo" {
-  description = "GitHub repository (format: owner/repo)"
+variable "ecs_task_execution_role_arn" {
+  description = "ECS Task Execution Role ARN for CODEF bucket policy"
   type        = string
   default     = ""
 }

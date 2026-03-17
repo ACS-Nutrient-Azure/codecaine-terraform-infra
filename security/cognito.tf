@@ -2,7 +2,7 @@
 resource "aws_cognito_user_pool" "main" {
   count = var.enable_cognito ? 1 : 0
 
-  name = "${var.project_name}-${var.environment}-user-pool"
+  name = upper("${var.project_name}-${var.environment}-USER-POOL")
 
   # Username configuration
   username_attributes      = ["email"]
@@ -69,7 +69,7 @@ resource "aws_cognito_user_pool" "main" {
   # }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-user-pool"
+    Name = upper("${var.project_name}-${var.environment}-USER-POOL")
   }
 }
 
@@ -77,7 +77,7 @@ resource "aws_cognito_user_pool" "main" {
 resource "aws_cognito_user_pool_client" "main" {
   count = var.enable_cognito ? 1 : 0
 
-  name         = "${var.project_name}-${var.environment}-client"
+  name         = upper("${var.project_name}-${var.environment}-CLIENT")
   user_pool_id = aws_cognito_user_pool.main[0].id
 
   generate_secret = false
@@ -130,7 +130,7 @@ resource "aws_cognito_user_pool_domain" "main" {
 resource "aws_cognito_identity_pool" "main" {
   count = var.enable_cognito ? 1 : 0
 
-  identity_pool_name               = "${var.project_name}-${var.environment}-identity-pool"
+  identity_pool_name               = upper("${var.project_name}-${var.environment}-IDENTITY-POOL")
   allow_unauthenticated_identities = false
 
   cognito_identity_providers {
@@ -140,7 +140,7 @@ resource "aws_cognito_identity_pool" "main" {
   }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-identity-pool"
+    Name = upper("${var.project_name}-${var.environment}-IDENTITY-POOL")
   }
 }
 
@@ -148,7 +148,7 @@ resource "aws_cognito_identity_pool" "main" {
 resource "aws_iam_role" "cognito_authenticated" {
   count = var.enable_cognito ? 1 : 0
 
-  name = "${var.project_name}-${var.environment}-cognito-authenticated-role"
+  name = upper("${var.project_name}-${var.environment}-COGNITO-AUTHENTICATED-ROLE")
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -172,7 +172,7 @@ resource "aws_iam_role" "cognito_authenticated" {
   })
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-cognito-authenticated-role"
+    Name = upper("${var.project_name}-${var.environment}-COGNITO-AUTHENTICATED-ROLE")
   }
 }
 

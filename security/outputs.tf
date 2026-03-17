@@ -1,16 +1,16 @@
 output "route53_zone_id" {
   description = "Route53 hosted zone ID"
-  value       = data.aws_route53_zone.existing.zone_id
+  value       = local.zone_id
 }
 
 output "route53_name_servers" {
   description = "Route53 name servers"
-  value       = data.aws_route53_zone.existing.name_servers
+  value       = var.create_route53_zone ? aws_route53_zone.main[0].name_servers : data.aws_route53_zone.existing[0].name_servers
 }
 
 output "acm_certificate_arn" {
   description = "ACM certificate ARN"
-  value       = data.aws_acm_certificate.existing.arn
+  value       = local.acm_certificate_arn
 }
 
 output "waf_web_acl_id" {

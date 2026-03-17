@@ -1,13 +1,21 @@
 # Route53 Record for ALB
-# codecaine.yujeong91.shop 도메인을 ALB에 연결
+# security 모듈 remote state에서 zone_id 직접 참조
+
+locals {
+  route53_zone_id       = data.terraform_remote_state.security.outputs.route53_zone_id
+  create_route53_record = local.route53_zone_id != "" && var.domain_name != ""
+}
 
 data "aws_route53_zone" "main" {
-  zone_id = var.route53_zone_id
+  count   = local.create_route53_record ? 1 : 0
+  zone_id = local.route53_zone_id
 }
 
 resource "aws_route53_record" "alb" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.domain_name
+  count = local.create_route53_record ? 1 : 0
+
+  zone_id = data.aws_route53_zone.main[0].zone_id
+  name    = "${var.subdomain_prefix}.${var.domain_name}"
   type    = "A"
 
   alias {

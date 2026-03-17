@@ -15,46 +15,10 @@ variable "environment" {
 }
 
 # ECS Configuration
-variable "task_cpu" {
-  description = "Task CPU units (256, 512, 1024, 2048, 4096)"
-  type        = string
-  default     = "256"
-}
-
-variable "task_memory" {
-  description = "Task memory in MB (512, 1024, 2048, 4096, 8192)"
-  type        = string
-  default     = "512"
-}
-
-variable "container_name" {
-  description = "Container name"
-  type        = string
-  default     = "app"
-}
-
-variable "container_port" {
-  description = "Container port"
-  type        = number
-  default     = 8080
-}
-
 variable "image_tag" {
   description = "Docker image tag"
   type        = string
   default     = "latest"
-}
-
-variable "desired_count" {
-  description = "Desired number of tasks"
-  type        = number
-  default     = 1
-}
-
-variable "health_check_path" {
-  description = "Health check path"
-  type        = string
-  default     = "/health"
 }
 
 variable "environment_variables" {
@@ -98,11 +62,7 @@ variable "request_count_target_value" {
 }
 
 # ALB Configuration
-variable "certificate_arn" {
-  description = "ACM certificate ARN for HTTPS"
-  type        = string
-  default     = ""
-}
+# certificate_arn은 security remote state에서 자동 참조
 
 # Monitoring
 variable "enable_container_insights" {
@@ -141,123 +101,40 @@ variable "bastion_allowed_cidrs" {
   default     = []
 }
 
-# Network Configuration (독립 실행 모드)
+# Network Configuration
 variable "use_existing_vpc" {
-  description = "Use existing VPC resources (false = create new VPC)"
-  type        = bool
-  default     = false
-}
-
-variable "vpc_cidr" {
-  description = "VPC CIDR block (독립 모드)"
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "availability_zones" {
-  description = "Availability zones (독립 모드)"
-  type        = list(string)
-  default     = ["ap-northeast-2a", "ap-northeast-2c"]
-}
-
-variable "public_subnet_cidrs" {
-  description = "Public subnet CIDR blocks (독립 모드)"
-  type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
-}
-
-variable "private_app_subnet_cidrs" {
-  description = "Private application subnet CIDR blocks (독립 모드)"
-  type        = list(string)
-  default     = ["10.0.11.0/24", "10.0.12.0/24"]
-}
-
-variable "enable_nat_gateway" {
-  description = "Enable NAT Gateway for private subnets (독립 모드)"
+  description = "Use existing VPC resources from foundation module"
   type        = bool
   default     = true
 }
 
-# Existing VPC Configuration (기존 VPC 사용 시)
-variable "existing_vpc_id" {
-  description = "Existing VPC ID (use_existing_vpc = true)"
-  type        = string
-  default     = ""
-}
-
-variable "existing_public_subnet_ids" {
-  description = "Existing public subnet IDs (use_existing_vpc = true)"
-  type        = list(string)
-  default     = []
-}
-
-variable "existing_private_app_subnet_ids" {
-  description = "Existing private app subnet IDs (use_existing_vpc = true)"
-  type        = list(string)
-  default     = []
-}
-
-variable "existing_alb_security_group_id" {
-  description = "Existing ALB security group ID (use_existing_vpc = true)"
-  type        = string
-  default     = ""
-}
-
-variable "existing_ecs_tasks_security_group_id" {
-  description = "Existing ECS tasks security group ID (use_existing_vpc = true)"
-  type        = string
-  default     = ""
-}
-
 # Route53 Configuration
-variable "route53_zone_id" {
-  description = "Route53 Hosted Zone ID"
-  type        = string
-  default     = ""
-}
+# route53_zone_id는 security remote state에서 자동 참조
 
 variable "domain_name" {
-  description = "Domain name for ALB (e.g., codecaine.yujeong91.shop)"
+  description = "Root domain name (e.g., yujeong91.shop)"
   type        = string
   default     = ""
 }
 
-# ECR Configuration
-variable "ecr_registry" {
-  description = "ECR registry URL"
+variable "subdomain_prefix" {
+  description = "Subdomain prefix for the service (e.g., codecaine → codecaine.yujeong91.shop)"
   type        = string
-  default     = "365827924759.dkr.ecr.ap-northeast-2.amazonaws.com"
-}
-
-variable "ecr_repository_name" {
-  description = "ECR repository name to use for ECS task"
-  type        = string
-  default     = "codecaine-frontend"
+  default     = "codecaine"
 }
 
 # Service Deployment Configuration
 variable "enabled_services" {
   description = "List of services to deploy (only services with ECR images should be enabled)"
   type        = list(string)
-  default     = []
+  default     = ["users", "history", "chatbot", "analysis", "frontend"]
   validation {
     condition = alltrue([
       for service in var.enabled_services :
-      contains(["history", "mypage", "analysis", "chatbot", "frontend"], service)
+      contains(["users", "history", "chatbot", "analysis", "frontend"], service)
     ])
-    error_message = "Enabled services must be one of: history, mypage, analysis, chatbot, frontend"
+    error_message = "Enabled services must be one of: users, history, chatbot, analysis, frontend"
   }
 }
 
-# Deprecated ECR variables (kept for backward compatibility)
-variable "use_existing_ecr" {
-  description = "Use existing ECR repository (false = create new ECR)"
-  type        = bool
-  default     = false
-}
 
-variable "existing_ecr_repository_url" {
-  description = "Existing ECR repository URL (use_existing_ecr = true)"
-  type        = string
-  default     = ""
-}

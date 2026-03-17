@@ -81,7 +81,7 @@ data "aws_ami" "amazon_linux_2023" {
 resource "aws_instance" "bastion" {
   ami                    = data.aws_ami.amazon_linux_2023.id
   instance_type          = var.bastion_instance_type
-  key_name               = var.bastion_key_name # 기존 키 페어 사용 (codecaine.pem)
+  key_name               = var.bastion_key_name # 기존 키 페어 사용 (tera-test.pem)
   subnet_id              = local.public_subnet_ids[0]
   vpc_security_group_ids = [aws_security_group.bastion.id]
   iam_instance_profile   = aws_iam_instance_profile.bastion.name
@@ -118,4 +118,15 @@ resource "aws_eip" "bastion" {
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-BASTION-EIP"
   }
+}
+
+# RDS 보안 그룹에 Bastion 접근 허용 규칙 추가
+resource "aws_security_group_rule" "rds_from_bastion" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.bastion.id
+  security_group_id        = local.rds_security_group_id
+  description              = "PostgreSQL from Bastion host"
 }

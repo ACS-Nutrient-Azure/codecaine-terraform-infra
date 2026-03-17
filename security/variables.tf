@@ -15,8 +15,14 @@ variable "environment" {
 }
 
 variable "domain_name" {
-  description = "Domain name for ACM certificate"
+  description = "Root domain name for Route53 Zone and ACM certificate (e.g., yujeong91.shop)"
   type        = string
+}
+
+variable "subdomain_prefix" {
+  description = "Subdomain prefix for the service (e.g., codecaine → codecaine.yujeong91.shop)"
+  type        = string
+  default     = "codecaine"
 }
 
 variable "route53_zone_id" {
@@ -27,6 +33,12 @@ variable "route53_zone_id" {
 
 variable "create_route53_zone" {
   description = "Create new Route53 hosted zone"
+  type        = bool
+  default     = false
+}
+
+variable "create_acm_cert" {
+  description = "Create new ACM certificate (false = use existing)"
   type        = bool
   default     = false
 }

@@ -29,7 +29,6 @@ variable "aurora_clusters" {
     instance_count          = number
     database_name           = string
     master_username         = string
-    master_password         = string
     backup_retention        = number
     serverless_min_capacity = number
     serverless_max_capacity = number
@@ -41,7 +40,6 @@ variable "aurora_clusters" {
       instance_count          = 2
       database_name           = "vitamin_user"
       master_username         = "vitamin_user"
-      master_password         = "vitamin_user123!"
       backup_retention        = 7
       serverless_min_capacity = 0.5
       serverless_max_capacity = 2
@@ -52,7 +50,6 @@ variable "aurora_clusters" {
       instance_count          = 2
       database_name           = "vitamin_history"
       master_username         = "vitamin_history"
-      master_password         = "vitamin_history123!"
       backup_retention        = 7
       serverless_min_capacity = 0.5
       serverless_max_capacity = 2
@@ -63,7 +60,6 @@ variable "aurora_clusters" {
       instance_count          = 2
       database_name           = "vitamin_analysis"
       master_username         = "vitamin_analysis"
-      master_password         = "vitamin_analysis123!"
       backup_retention        = 7
       serverless_min_capacity = 0.5
       serverless_max_capacity = 2

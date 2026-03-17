@@ -52,30 +52,3 @@ output "private_app_route_table_id" {
   description = "Private app route table ID for NAT Gateway route"
   value       = aws_route_table.private_app.id
 }
-
-output "bastion_security_group_id" {
-  description = "Bastion security group ID"
-  value       = aws_security_group.bastion.id
-}
-
-# ECR Repository Outputs
-output "ecr_repository_urls" {
-  description = "ECR repository URLs"
-  value = {
-    for k, v in aws_ecr_repository.repositories : k => v.repository_url
-  }
-}
-
-output "ecr_repository_arns" {
-  description = "ECR repository ARNs"
-  value = {
-    for k, v in aws_ecr_repository.repositories : k => v.arn
-  }
-}
-
-output "ecr_repository_names" {
-  description = "ECR repository names"
-  value = {
-    for k, v in aws_ecr_repository.repositories : k => v.name
-  }
-}

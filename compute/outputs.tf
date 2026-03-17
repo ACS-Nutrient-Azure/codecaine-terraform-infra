@@ -4,8 +4,8 @@ output "alb_dns_name" {
 }
 
 output "alb_domain_name" {
-  description = "Custom domain name"
-  value       = var.domain_name != "" ? var.domain_name : aws_lb.main.dns_name
+  description = "Custom domain name (subdomain.domain)"
+  value       = var.domain_name != "" ? "${var.subdomain_prefix}.${var.domain_name}" : aws_lb.main.dns_name
 }
 
 output "alb_arn" {
@@ -58,7 +58,7 @@ output "cloudwatch_log_group_names" {
 
 output "services_with_images" {
   description = "Services that have images in ECR and were deployed"
-  value       = keys(local.services_to_deploy)
+  value       = keys(local.services)
 }
 
 # Network Outputs (독립 모드)

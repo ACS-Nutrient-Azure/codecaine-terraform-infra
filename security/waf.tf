@@ -2,7 +2,7 @@
 resource "aws_wafv2_web_acl" "main" {
   count = var.enable_waf ? 1 : 0
 
-  name  = "${var.project_name}-${var.environment}-waf"
+  name  = upper("${var.project_name}-${var.environment}-WAF")
   scope = "REGIONAL"
 
   default_action {
@@ -102,12 +102,12 @@ resource "aws_wafv2_web_acl" "main" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "${var.project_name}-${var.environment}-waf-metric"
+    metric_name                = upper("${var.project_name}-${var.environment}-WAF-METRIC")
     sampled_requests_enabled   = true
   }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-waf"
+    Name = upper("${var.project_name}-${var.environment}-WAF")
   }
 }
 
@@ -119,7 +119,7 @@ resource "aws_cloudwatch_log_group" "waf" {
   retention_in_days = 30
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-waf-logs"
+    Name = upper("${var.project_name}-${var.environment}-WAF-LOGS")
   }
 }
 

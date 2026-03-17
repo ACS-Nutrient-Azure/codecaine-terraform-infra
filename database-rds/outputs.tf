@@ -38,9 +38,9 @@ output "aurora_global_cluster_ids" {
 output "aurora_secret_arns" {
   description = "Aurora password secret ARNs"
   value = {
-    cluster1 = aws_secretsmanager_secret.aurora_cluster1.arn
-    cluster2 = aws_secretsmanager_secret.aurora_cluster2.arn
-    cluster3 = aws_secretsmanager_secret.aurora_cluster3.arn
+    cluster1 = aws_secretsmanager_secret.cluster1.arn
+    cluster2 = aws_secretsmanager_secret.cluster2.arn
+    cluster3 = aws_secretsmanager_secret.cluster3.arn
   }
   sensitive = true
 }

@@ -1,6 +1,6 @@
 # Auto Scaling Target for each service
 resource "aws_appautoscaling_target" "services" {
-  for_each = local.services_to_deploy
+  for_each = local.services
 
   max_capacity       = var.max_capacity
   min_capacity       = var.min_capacity
@@ -11,7 +11,7 @@ resource "aws_appautoscaling_target" "services" {
 
 # CPU-based Auto Scaling
 resource "aws_appautoscaling_policy" "cpu" {
-  for_each = local.services_to_deploy
+  for_each = local.services
 
   name               = "${var.project_name}-${var.environment}-${each.key}-cpu-scaling"
   policy_type        = "TargetTrackingScaling"
@@ -31,7 +31,7 @@ resource "aws_appautoscaling_policy" "cpu" {
 
 # Memory-based Auto Scaling
 resource "aws_appautoscaling_policy" "memory" {
-  for_each = local.services_to_deploy
+  for_each = local.services
 
   name               = "${var.project_name}-${var.environment}-${each.key}-memory-scaling"
   policy_type        = "TargetTrackingScaling"
@@ -51,7 +51,7 @@ resource "aws_appautoscaling_policy" "memory" {
 
 # Request Count-based Auto Scaling
 resource "aws_appautoscaling_policy" "request_count" {
-  for_each = local.services_to_deploy
+  for_each = local.services
 
   name               = "${var.project_name}-${var.environment}-${each.key}-request-scaling"
   policy_type        = "TargetTrackingScaling"

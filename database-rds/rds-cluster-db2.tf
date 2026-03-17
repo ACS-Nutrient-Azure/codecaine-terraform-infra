@@ -1,25 +1,5 @@
 # Aurora Cluster: history-cluster
-# Store password in AWS Secrets Manager
-resource "aws_secretsmanager_secret" "aurora_cluster2" {
-  name                    = "${var.project_name}-${var.environment}-${var.aurora_clusters["cluster2"].cluster_identifier}-password"
-  recovery_window_in_days = 7
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-${var.aurora_clusters["cluster2"].cluster_identifier}-password"
-  }
-}
-
-resource "aws_secretsmanager_secret_version" "aurora_cluster2" {
-  secret_id = aws_secretsmanager_secret.aurora_cluster2.id
-  secret_string = jsonencode({
-    username = var.aurora_clusters["cluster2"].master_username
-    password = var.aurora_clusters["cluster2"].master_password
-    engine   = "aurora-postgresql"
-    host     = aws_rds_cluster.aurora_cluster2.endpoint
-    port     = var.postgres_port
-    dbname   = var.aurora_clusters["cluster2"].database_name
-  })
-}
+# 비밀번호는 secrets.tf에서 관리됩니다
 
 # Aurora Global Database (Primary Region)
 resource "aws_rds_global_cluster" "aurora_cluster2" {
@@ -40,7 +20,7 @@ resource "aws_rds_cluster" "aurora_cluster2" {
   engine_mode        = "provisioned"
   database_name      = var.aurora_clusters["cluster2"].database_name
   master_username    = var.aurora_clusters["cluster2"].master_username
-  master_password    = var.aurora_clusters["cluster2"].master_password
+  master_password    = random_password.cluster2.result
   port               = var.postgres_port
 
   global_cluster_identifier = var.enable_global_database ? aws_rds_global_cluster.aurora_cluster2[0].id : null

@@ -90,13 +90,7 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.ecs_tasks.id]
   }
 
-  ingress {
-    description     = "PostgreSQL from Bastion"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.bastion.id]
-  }
+  # Bastion 접근은 compute 모듈에서 별도 규칙으로 추가됨
 
   egress {
     description = "Allow all outbound"
@@ -139,37 +133,6 @@ resource "aws_security_group" "vpc_endpoints" {
 
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-VPCE-SG"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# Bastion Security Group
-resource "aws_security_group" "bastion" {
-  name_prefix = lower("${var.project_name}-${var.environment}-bastion-")
-  description = "Security group for Bastion host"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description = "SSH from allowed IPs"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = var.bastion_allowed_cidrs
-  }
-
-  egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${upper(var.project_name)}-${upper(var.environment)}-BASTION-SG"
   }
 
   lifecycle {

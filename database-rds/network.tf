@@ -8,3 +8,5 @@ locals {
   db_subnet_group_name  = data.terraform_remote_state.foundation.outputs.db_subnet_group_name
   rds_security_group_id = data.terraform_remote_state.foundation.outputs.rds_security_group_id
 }
+
+# Lambda 보안 그룹은 secrets.tf에서 정의됨 (중복 제거)
