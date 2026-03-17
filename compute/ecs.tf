@@ -122,14 +122,17 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
           "ssm:GetParameters",
           "ssm:GetParameter"
         ]
-        Resource = "arn:aws:ssm:${var.region}:*:parameter/${var.project_name}/${var.environment}/rds/*"
+        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/*"
       },
       {
         Effect = "Allow"
         Action = [
-          "secretsmanager:GetSecretValue"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ]
-        Resource = "arn:aws:secretsmanager:${var.region}:*:secret:${var.project_name}-${var.environment}-*-secret-*"
+        # AWS Secrets Manager는 시크릿 이름 뒤에 6자리 랜덤 suffix를 자동으로 붙임 (예: -a1b2c3)
+        # ARN 패턴에 반드시 트레일링 와일드카드(*) 포함 필요
+        Resource = "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-${var.environment}-*-cluster-secret-*"
       }
     ]
   })
@@ -157,7 +160,7 @@ resource "aws_iam_role" "ecs_task" {
   }
 }
 
-# ECS Task Role - 공통 런타임 권한 (Secrets Manager, SSM)
+# ECS Task Role - 공통 런타임 권한 (Secrets Manager, SSM, S3, ECS Exec)
 resource "aws_iam_role_policy" "ecs_task_runtime" {
   name = "${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-RUNTIME-POLICY"
   role = aws_iam_role.ecs_task.id
@@ -168,9 +171,10 @@ resource "aws_iam_role_policy" "ecs_task_runtime" {
       {
         Effect = "Allow"
         Action = [
-          "secretsmanager:GetSecretValue"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ]
-        Resource = "arn:aws:secretsmanager:${var.region}:*:secret:${var.project_name}-${var.environment}-*-secret-*"
+        Resource = "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-${var.environment}-*-cluster-secret-*"
       },
       {
         Effect = "Allow"
@@ -178,7 +182,32 @@ resource "aws_iam_role_policy" "ecs_task_runtime" {
           "ssm:GetParameters",
           "ssm:GetParameter"
         ]
-        Resource = "arn:aws:ssm:${var.region}:*:parameter/${var.project_name}/${var.environment}/rds/*"
+        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/*"
+      },
+      # users 서비스의 S3_BUCKET_NAME 환경변수에 대응하는 S3 접근 권한
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.project_name}-${var.environment}-codef",
+          "arn:aws:s3:::${var.project_name}-${var.environment}-codef/*"
+        ]
+      },
+      # ECS Exec (enable_ecs_exec = true 시 필요)
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -225,6 +254,34 @@ resource "aws_iam_role_policy" "ecs_task_chatbot_s3" {
           "arn:aws:s3:::${var.project_name}-${var.environment}-chatbot-json",
           "arn:aws:s3:::${var.project_name}-${var.environment}-chatbot-json/*"
         ]
+      },
+      # chatbot도 런타임에 Secrets Manager / SSM 접근 가능해야 함 (공통 Role과 동일)
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-${var.environment}-*-cluster-secret-*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameters",
+          "ssm:GetParameter"
+        ]
+        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/*"
+      },
+      # ECS Exec (enable_ecs_exec = true 시 필요)
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -347,10 +404,11 @@ resource "aws_ecs_task_definition" "services" {
       )
 
       # DB 정보는 history, users, analysis에만 주입
+      # Secrets Manager valueFrom: data source로 실제 ARN 조회 후 JSON key 추출
       secrets = contains(["users", "history", "analysis"], each.key) ? [
         {
           name      = "DB_PASSWORD"
-          valueFrom = "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-${var.environment}-${each.value.name}-cluster-secret:password::"
+          valueFrom = "${data.aws_secretsmanager_secret.cluster[each.key].arn}:password::"
         },
         {
           name      = "DB_HOST"
@@ -446,6 +504,12 @@ resource "aws_ecs_service" "services" {
 
 # Get current AWS account ID
 data "aws_caller_identity" "current" {}
+
+# 각 서비스별 Secrets Manager 시크릿 ARN 조회 (랜덤 suffix 포함한 실제 ARN 획득)
+data "aws_secretsmanager_secret" "cluster" {
+  for_each = toset(["users", "history", "analysis"])
+  name     = "${var.project_name}-${var.environment}-${each.key}-cluster-secret"
+}
 
 # 각 서비스별 ECR 최신 이미지 태그 동적 조회 (업로드 시간 기준)
 data "aws_ecr_image" "latest" {
