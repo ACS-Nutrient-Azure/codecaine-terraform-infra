@@ -120,7 +120,7 @@ resource "aws_lb_listener_rule" "services" {
       }
       users = {
         priority = 200
-        paths    = ["/api/mypage", "/api/mypage/*"]
+        paths    = ["/api/users", "/api/users/*", "/api/codef", "/api/codef/*"]
       }
       analysis = {
         priority = 300
