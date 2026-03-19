@@ -5,6 +5,7 @@ output "aurora_cluster_endpoints" {
     cluster1 = aws_rds_cluster.aurora_cluster1.endpoint
     cluster2 = aws_rds_cluster.aurora_cluster2.endpoint
     cluster3 = aws_rds_cluster.aurora_cluster3.endpoint
+    cluster4 = aws_rds_cluster.aurora_cluster4.endpoint
   }
 }
 
@@ -14,6 +15,7 @@ output "aurora_cluster_reader_endpoints" {
     cluster1 = aws_rds_cluster.aurora_cluster1.reader_endpoint
     cluster2 = aws_rds_cluster.aurora_cluster2.reader_endpoint
     cluster3 = aws_rds_cluster.aurora_cluster3.reader_endpoint
+    cluster4 = aws_rds_cluster.aurora_cluster4.reader_endpoint
   }
 }
 
@@ -23,6 +25,7 @@ output "aurora_cluster_arns" {
     cluster1 = aws_rds_cluster.aurora_cluster1.arn
     cluster2 = aws_rds_cluster.aurora_cluster2.arn
     cluster3 = aws_rds_cluster.aurora_cluster3.arn
+    cluster4 = aws_rds_cluster.aurora_cluster4.arn
   }
 }
 
@@ -32,6 +35,7 @@ output "aurora_global_cluster_ids" {
     cluster1 = aws_rds_global_cluster.aurora_cluster1[0].id
     cluster2 = aws_rds_global_cluster.aurora_cluster2[0].id
     cluster3 = aws_rds_global_cluster.aurora_cluster3[0].id
+    cluster4 = aws_rds_global_cluster.aurora_cluster4[0].id
   } : {}
 }
 
@@ -41,6 +45,7 @@ output "aurora_secret_arns" {
     cluster1 = aws_secretsmanager_secret.cluster1.arn
     cluster2 = aws_secretsmanager_secret.cluster2.arn
     cluster3 = aws_secretsmanager_secret.cluster3.arn
+    cluster4 = aws_secretsmanager_secret.cluster4.arn
   }
   sensitive = true
 }
