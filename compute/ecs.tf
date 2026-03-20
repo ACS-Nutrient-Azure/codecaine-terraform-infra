@@ -389,11 +389,11 @@ resource "aws_ecs_task_definition" "services" {
           },
           {
             name  = "CODEF_CLIENT_ID"
-            value = "e4fbd85c-2164-4b79-bcb3-d5171c8f59b9"
+            value = "eaf53337-58f3-486e-9431-2a6a06e91fe5"
           },
           {
             name  = "CODEF_CLIENT_SECRET"
-            value = "e645fad7-e06e-4d5f-a268-c41fc6b58c8b"
+            value = "5fc85ddb-37f6-4f17-a8dd-fc02535e9f4b"
           },
           {
             name  = "APP_ENV"
