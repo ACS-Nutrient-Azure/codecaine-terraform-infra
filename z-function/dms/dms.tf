@@ -21,7 +21,7 @@ resource "aws_db_parameter_group" "users_logical" {
   count       = var.use_aurora ? 0 : 1
   name_prefix = "${local.name_prefix}-users-logical-"
   family      = "postgres15"
-  description = "users RDS DMS CDC용 — logical replication 활성화"
+  description = "users RDS DMS CDC - logical replication enabled"
 
   parameter {
     name  = "log_connections"
@@ -58,7 +58,7 @@ resource "aws_rds_cluster_parameter_group" "users_logical" {
   count       = var.use_aurora ? 1 : 0
   name_prefix = "${local.name_prefix}-users-logical-aurora-"
   family      = "aurora-postgresql15"
-  description = "users Aurora DMS CDC용 — logical replication 활성화"
+  description = "users Aurora DMS CDC - logical replication enabled"
 
   parameter {
     name  = "log_connections"
@@ -104,7 +104,7 @@ resource "aws_security_group" "dms" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow all outbound (RDS 접근용)"
+    description = "Allow all outbound for RDS access"
   }
 
   tags = {
@@ -120,7 +120,7 @@ resource "aws_security_group_rule" "rds_allow_dms" {
   protocol                 = "tcp"
   security_group_id        = local.rds_sg_id
   source_security_group_id = aws_security_group.dms.id
-  description              = "DMS Replication Instance → RDS"
+  description              = "DMS Replication Instance to RDS"
 }
 
 # ============================================================
@@ -151,7 +151,7 @@ resource "aws_dms_replication_instance" "main" {
   replication_subnet_group_id = aws_dms_replication_subnet_group.main.id
   vpc_security_group_ids      = [aws_security_group.dms.id]
 
-  engine_version               = "3.5.3"
+  engine_version               = "3.5.4"
   auto_minor_version_upgrade   = true
   multi_az                     = false
   publicly_accessible          = false
@@ -185,7 +185,8 @@ resource "aws_dms_endpoint" "source_users" {
   ssl_mode = "require"
 
   # Aurora PostgreSQL CDC 필수 설정
-  extra_connection_attributes = "heartbeatFrequency=1;pluginName=pglogical"
+  # pglogical은 별도 설치 필요. RDS 기본 내장 test_decoding 사용
+  extra_connection_attributes = "heartbeatFrequency=1;pluginName=test_decoding"
 
   tags = {
     Name = "${local.name_prefix}-src-users"
@@ -652,6 +653,19 @@ resource "aws_dms_replication_task" "user_to_analysis" {
           column-name = "nutrient_amount"
         }
         value = "ans_nutrient_amount"
+      },
+      # anaysis_current_ingredients에 cognito_id 컬럼 없음 → 제거
+      {
+        rule-type   = "transformation"
+        rule-id     = "306"
+        rule-name   = "remove-ci-cognito-id"
+        rule-action = "remove-column"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_ingredients"
+          column-name = "cognito_id"
+        }
       }
     ]
   })
