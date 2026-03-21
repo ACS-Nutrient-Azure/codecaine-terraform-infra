@@ -102,23 +102,14 @@ column "cognito_id" of relation "anaysis_current_ingredients" does not exist
 ```
 
 **해결**
-`dms.tf` table_mappings에 `remove-column` 변환 규칙 추가 (rule-id: 306):
-```hcl
-{
-  rule-type   = "transformation"
-  rule-id     = "306"
-  rule-name   = "remove-ci-cognito-id"
-  rule-action = "remove-column"
-  rule-target = "column"
-  object-locator = {
-    schema-name = "public"
-    table-name  = "current_ingredients"
-    column-name = "cognito_id"
-  }
-}
+소스에서 제거하는 게 아니라 **타겟 테이블에 컬럼을 추가**하는 것이 올바른 방향.
+
+```sql
+-- Analysis DB에서 직접 실행
+ALTER TABLE anaysis_current_ingredients ADD COLUMN IF NOT EXISTS cognito_id VARCHAR(36);
 ```
 
-변경 후 `terraform apply` 및 태스크 재시작 필요.
+`db_init/init.sql`에도 `cognito_id` 컬럼 추가 반영.
 
 ---
 

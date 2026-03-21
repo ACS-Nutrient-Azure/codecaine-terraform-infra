@@ -653,19 +653,6 @@ resource "aws_dms_replication_task" "user_to_analysis" {
           column-name = "nutrient_amount"
         }
         value = "ans_nutrient_amount"
-      },
-      # anaysis_current_ingredients에 cognito_id 컬럼 없음 → 제거
-      {
-        rule-type   = "transformation"
-        rule-id     = "306"
-        rule-name   = "remove-ci-cognito-id"
-        rule-action = "remove-column"
-        rule-target = "column"
-        object-locator = {
-          schema-name = "public"
-          table-name  = "current_ingredients"
-          column-name = "cognito_id"
-        }
       }
     ]
   })
