@@ -64,6 +64,16 @@ variable "aurora_clusters" {
       serverless_min_capacity = 0.5
       serverless_max_capacity = 2
     }
+    cluster4 = {
+      cluster_identifier      = "chatbot-cluster"
+      instance_class          = "db.serverless"
+      instance_count          = 2
+      database_name           = "vitamin_chatbot"
+      master_username         = "vitamin_chatbot"
+      backup_retention        = 7
+      serverless_min_capacity = 0.5
+      serverless_max_capacity = 2
+    }
   }
 }
 

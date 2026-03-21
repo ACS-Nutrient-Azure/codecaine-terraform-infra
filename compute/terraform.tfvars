@@ -31,8 +31,7 @@ enable_ecs_exec           = false # 디버깅용
 bastion_instance_type = "t3.micro"
 bastion_key_name      = "tera-test" # tera-test.pem 키 사용
 bastion_allowed_cidrs = [
-  "1.2.3.4/32", # 사무실 IP
-  # "5.6.7.8/32", # 집 IP
+  "0.0.0.0/0"
 ]
 
 # ============================================

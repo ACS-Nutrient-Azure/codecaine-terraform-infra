@@ -21,3 +21,11 @@ output "history_secret_arn" {
 output "analysis_secret_arn" {
   value = aws_secretsmanager_secret.analysis.arn
 }
+
+output "chatbot_endpoint" {
+  value = aws_db_instance.chatbot.address
+}
+
+output "chatbot_secret_arn" {
+  value = aws_secretsmanager_secret.chatbot.arn
+}

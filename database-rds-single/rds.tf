@@ -83,6 +83,7 @@ resource "aws_db_instance" "history" {
 # ============================================
 # RDS 3: analysis
 # ============================================
+
 resource "aws_db_instance" "analysis" {
   identifier        = "${var.project_name}-${var.environment}-analysis"
   engine            = "postgres"
@@ -111,5 +112,39 @@ resource "aws_db_instance" "analysis" {
 
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-ANALYSIS-RDS"
+  }
+}
+
+# ============================================
+# RDS 4: chatbot
+# ============================================
+resource "aws_db_instance" "chatbot" {
+  identifier        = "${var.project_name}-${var.environment}-chatbot"
+  engine            = "postgres"
+  engine_version    = var.postgres_version
+  instance_class    = var.instance_class
+  allocated_storage = var.allocated_storage
+
+  db_name  = "vitamin_chatbot"
+  username = "vitamin_chatbot"
+  password = random_password.chatbot.result
+  port     = var.postgres_port
+
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [local.rds_security_group_id]
+  parameter_group_name   = aws_db_parameter_group.postgres.name
+
+  multi_az                = var.multi_az
+  publicly_accessible     = false
+  storage_encrypted       = true
+  backup_retention_period = var.backup_retention_period
+  skip_final_snapshot     = var.skip_final_snapshot
+  deletion_protection     = var.deletion_protection
+
+  performance_insights_enabled = false
+  monitoring_interval          = 0
+
+  tags = {
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-RDS"
   }
 }

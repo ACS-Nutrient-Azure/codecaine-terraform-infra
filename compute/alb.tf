@@ -120,7 +120,7 @@ resource "aws_lb_listener_rule" "services" {
       }
       users = {
         priority = 200
-        paths    = ["/api/mypage", "/api/mypage/*"]
+        paths    = ["/api/users", "/api/users/*"]
       }
       analysis = {
         priority = 300
@@ -144,6 +144,26 @@ resource "aws_lb_listener_rule" "services" {
   condition {
     path_pattern {
       values = each.value.paths
+    }
+  }
+}
+
+# WebSocket Listener Rule for chatbot
+# idle timeout은 ALB 기본값(60초) 유지, heartbeat로 연결 유지 처리
+resource "aws_lb_listener_rule" "chatbot_ws" {
+  count = contains(var.enabled_services, "chatbot") ? 1 : 0
+
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 350
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.services["chatbot"].arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/ws/chatbot", "/ws/chatbot/*"]
     }
   }
 }

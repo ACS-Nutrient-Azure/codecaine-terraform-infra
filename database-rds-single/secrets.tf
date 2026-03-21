@@ -178,3 +178,60 @@ resource "aws_ssm_parameter" "analysis_username" {
   value = aws_db_instance.analysis.username
   tags  = { Name = "${var.project_name}-${var.environment}-analysis-username" }
 }
+
+resource "random_password" "chatbot" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}:?"
+}
+
+resource "aws_secretsmanager_secret" "chatbot" {
+  name                    = "${var.project_name}-${var.environment}-chatbot-cluster-secret"
+  description             = "Chatbot RDS credentials"
+  recovery_window_in_days = 0
+
+  tags = {
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-CLUSTER-SECRET"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "chatbot" {
+  secret_id = aws_secretsmanager_secret.chatbot.id
+  secret_string = jsonencode({
+    username = aws_db_instance.chatbot.username
+    password = random_password.chatbot.result
+    engine   = "postgres"
+    host     = aws_db_instance.chatbot.address
+    port     = var.postgres_port
+    dbname   = aws_db_instance.chatbot.db_name
+  })
+}
+
+# chatbot SSM Parameters
+resource "aws_ssm_parameter" "chatbot_endpoint" {
+  name  = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/endpoint"
+  type  = "String"
+  value = aws_db_instance.chatbot.address
+  tags  = { Name = "${var.project_name}-${var.environment}-chatbot-endpoint" }
+}
+
+resource "aws_ssm_parameter" "chatbot_port" {
+  name  = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/port"
+  type  = "String"
+  value = tostring(var.postgres_port)
+  tags  = { Name = "${var.project_name}-${var.environment}-chatbot-port" }
+}
+
+resource "aws_ssm_parameter" "chatbot_dbname" {
+  name  = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/dbname"
+  type  = "String"
+  value = aws_db_instance.chatbot.db_name
+  tags  = { Name = "${var.project_name}-${var.environment}-chatbot-dbname" }
+}
+
+resource "aws_ssm_parameter" "chatbot_username" {
+  name  = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/username"
+  type  = "String"
+  value = aws_db_instance.chatbot.username
+  tags  = { Name = "${var.project_name}-${var.environment}-chatbot-username" }
+}

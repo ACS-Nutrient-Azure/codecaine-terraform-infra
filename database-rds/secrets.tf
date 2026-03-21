@@ -316,3 +316,88 @@ resource "aws_ssm_parameter" "cluster3_username" {
     Name = "${var.project_name}-${var.environment}-analysis-cluster-username"
   }
 }
+
+# Cluster 4: chatbot-cluster
+resource "aws_secretsmanager_secret" "cluster4" {
+  name                    = "${var.project_name}-${var.environment}-chatbot-cluster-secret"
+  description             = "Chatbot cluster master credentials (auto-generated)"
+  recovery_window_in_days = 0
+
+  tags = {
+    Name    = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-CLUSTER-SECRET"
+    Cluster = "chatbot-cluster"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "cluster4" {
+  secret_id = aws_secretsmanager_secret.cluster4.id
+  secret_string = jsonencode({
+    username = var.aurora_clusters["cluster4"].master_username
+    password = random_password.cluster4.result
+    engine   = "postgres"
+    host     = aws_rds_cluster.aurora_cluster4.endpoint
+    port     = var.postgres_port
+    dbname   = var.aurora_clusters["cluster4"].database_name
+  })
+}
+
+resource "random_password" "cluster4" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}:?"
+}
+
+resource "aws_ssm_parameter" "cluster4_endpoint" {
+  name        = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/endpoint"
+  description = "Chatbot cluster endpoint"
+  type        = "String"
+  value       = aws_rds_cluster.aurora_cluster4.endpoint
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-chatbot-cluster-endpoint"
+  }
+}
+
+resource "aws_ssm_parameter" "cluster4_reader_endpoint" {
+  name        = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/reader-endpoint"
+  description = "Chatbot cluster reader endpoint"
+  type        = "String"
+  value       = aws_rds_cluster.aurora_cluster4.reader_endpoint
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-chatbot-cluster-reader-endpoint"
+  }
+}
+
+resource "aws_ssm_parameter" "cluster4_port" {
+  name        = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/port"
+  description = "Chatbot cluster port"
+  type        = "String"
+  value       = tostring(var.postgres_port)
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-chatbot-cluster-port"
+  }
+}
+
+resource "aws_ssm_parameter" "cluster4_dbname" {
+  name        = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/dbname"
+  description = "Chatbot cluster database name"
+  type        = "String"
+  value       = var.aurora_clusters["cluster4"].database_name
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-chatbot-cluster-dbname"
+  }
+}
+
+resource "aws_ssm_parameter" "cluster4_username" {
+  name        = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/username"
+  description = "Chatbot cluster master username"
+  type        = "String"
+  value       = var.aurora_clusters["cluster4"].master_username
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-chatbot-cluster-username"
+  }
+}
