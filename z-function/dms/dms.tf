@@ -661,3 +661,229 @@ resource "aws_dms_replication_task" "user_to_analysis" {
     Name = "${local.name_prefix}-user-to-analysis"
   }
 }
+
+# ============================================================
+# Target Endpoint: history-cluster (vitamin_history)
+# ============================================================
+
+resource "aws_dms_endpoint" "target_history" {
+  endpoint_id   = "${local.name_prefix}-tgt-history"
+  endpoint_type = "target"
+  engine_name   = "aurora-postgresql"
+
+  server_name   = local.history_secret["host"]
+  port          = local.history_secret["port"]
+  database_name = local.history_secret["dbname"]
+  username      = local.history_secret["username"]
+  password      = local.history_secret["password"]
+
+  ssl_mode = "require"
+
+  tags = {
+    Name = "${local.name_prefix}-tgt-history"
+  }
+}
+
+# ============================================================
+# Replication Task: users → history
+# current_supplements → intake_supplements
+# ============================================================
+
+resource "aws_dms_replication_task" "users_to_history" {
+  replication_task_id      = "${local.name_prefix}-users-to-history"
+  replication_instance_arn = aws_dms_replication_instance.main.replication_instance_arn
+  source_endpoint_arn      = aws_dms_endpoint.source_users.endpoint_arn
+  target_endpoint_arn      = aws_dms_endpoint.target_history.endpoint_arn
+  migration_type           = var.migration_type
+
+  replication_task_settings = jsonencode({
+    TargetMetadata = {
+      SupportLobs        = true
+      FullLobMode        = false
+      LimitedSizeLobMode = true
+      LobMaxSize         = 32768
+    }
+    FullLoadSettings = {
+      TargetTablePrepMode              = "DO_NOTHING"
+      CreatePkAfterFullLoad            = false
+      StopTaskCachedChangesApplied     = false
+      StopTaskCachedChangesNotApplied  = false
+      MaxFullLoadSubTasks              = 8
+      TransactionConsistencyTimeout    = 600
+      CommitRate                       = 50000
+    }
+    Logging = {
+      EnableLogging = true
+      LogComponents = [
+        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "TARGET_LOAD",   Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "TASK_MANAGER",  Severity = "LOGGER_SEVERITY_DEFAULT" },
+      ]
+    }
+  })
+
+  table_mappings = jsonencode({
+    rules = [
+
+      # ── Selection Rule ────────────────────────────────────────────
+
+      {
+        rule-type   = "selection"
+        rule-id     = "1"
+        rule-name   = "sel-current-supplements"
+        rule-action = "include"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+        }
+      },
+
+      # ── current_supplements → intake_supplements ──────────────────
+
+      {
+        rule-type   = "transformation"
+        rule-id     = "101"
+        rule-name   = "rename-table"
+        rule-action = "rename"
+        rule-target = "table"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+        }
+        value = "intake_supplements"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "102"
+        rule-name   = "rename-product-name"
+        rule-action = "rename"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "product_name"
+        }
+        value = "itk_product_name"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "103"
+        rule-name   = "rename-serving-amount"
+        rule-action = "rename"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "serving_amount"
+        }
+        value = "itk_serving_amount"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "104"
+        rule-name   = "rename-serving-per-day"
+        rule-action = "rename"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "serving_per_day"
+        }
+        value = "itk_serving_per_day"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "105"
+        rule-name   = "rename-daily-total-amount"
+        rule-action = "rename"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "daily_total_amount"
+        }
+        value = "itk_daily_total_amount"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "106"
+        rule-name   = "rename-total-quantity"
+        rule-action = "rename"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "total_quantity"
+        }
+        value = "itk_total_quantity"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "107"
+        rule-name   = "rename-purchased-dt"
+        rule-action = "rename"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "purchased_dt"
+        }
+        value = "itk_purchased_dt"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "108"
+        rule-name   = "rename-estimated-end-dt"
+        rule-action = "rename"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "estimated_end_dt"
+        }
+        value = "itk_estimated_end_dt"
+      },
+      # intake_supplements에 없는 컬럼 제거
+      {
+        rule-type   = "transformation"
+        rule-id     = "109"
+        rule-name   = "remove-ingredients"
+        rule-action = "remove-column"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "ingredients"
+        }
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "110"
+        rule-name   = "remove-start-dt"
+        rule-action = "remove-column"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "start_dt"
+        }
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "111"
+        rule-name   = "remove-end-dt"
+        rule-action = "remove-column"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "current_supplements"
+          column-name = "end_dt"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.name_prefix}-users-to-history"
+  }
+}

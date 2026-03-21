@@ -62,6 +62,10 @@ data "aws_secretsmanager_secret_version" "analysis_cluster" {
   secret_id = "${var.project_name}-${var.environment}-analysis-cluster-secret"
 }
 
+data "aws_secretsmanager_secret_version" "history_cluster" {
+  secret_id = "${var.project_name}-${var.environment}-history-cluster-secret"
+}
+
 locals {
   vpc_id                = data.aws_vpc.main.id
   private_db_subnet_ids = data.aws_subnets.private_db.ids
@@ -69,4 +73,5 @@ locals {
 
   users_secret    = jsondecode(data.aws_secretsmanager_secret_version.users_cluster.secret_string)
   analysis_secret = jsondecode(data.aws_secretsmanager_secret_version.analysis_cluster.secret_string)
+  history_secret  = jsondecode(data.aws_secretsmanager_secret_version.history_cluster.secret_string)
 }

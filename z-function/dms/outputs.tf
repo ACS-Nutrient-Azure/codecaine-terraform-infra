@@ -32,3 +32,13 @@ output "dms_security_group_id" {
   description = "DMS 복제 인스턴스 Security Group ID"
   value       = aws_security_group.dms.id
 }
+
+output "history_target_endpoint_arn" {
+  description = "Target endpoint ARN (history-cluster)"
+  value       = aws_dms_endpoint.target_history.endpoint_arn
+}
+
+output "history_replication_task_arn" {
+  description = "DMS 복제 태스크 ARN (users → history)"
+  value       = aws_dms_replication_task.users_to_history.replication_task_arn
+}
