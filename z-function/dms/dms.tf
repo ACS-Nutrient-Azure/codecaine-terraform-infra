@@ -1,18 +1,27 @@
 # ============================================================
-# [사전 조건] users-cluster Logical Replication 활성화용 파라미터 그룹
+# [사전 조건] users RDS Logical Replication 활성화용 파라미터 그룹
 # ============================================================
-# apply 후 users-cluster 를 이 파라미터 그룹으로 변경하고 재시작 필요:
+# use_aurora = false (RDS Single, 현재):
+#   aws rds modify-db-instance \
+#     --db-instance-identifier cdci-prd-users \
+#     --db-parameter-group-name <output: users_logical_param_group_name> \
+#     --apply-immediately
+#   aws rds reboot-db-instance --db-instance-identifier cdci-prd-users
+#
+# use_aurora = true (Aurora Cluster, 나중에 전환 시):
 #   aws rds modify-db-cluster \
 #     --db-cluster-identifier cdci-prd-users-cluster \
-#     --db-cluster-parameter-group-name <아래 리소스 name> \
+#     --db-cluster-parameter-group-name <output: users_logical_param_group_name> \
 #     --apply-immediately
 #   aws rds reboot-db-instance --db-instance-identifier cdci-prd-users-cluster-wo
 # ============================================================
 
-resource "aws_rds_cluster_parameter_group" "users_logical" {
+# RDS Single용 파라미터 그룹 (use_aurora = false)
+resource "aws_db_parameter_group" "users_logical" {
+  count       = var.use_aurora ? 0 : 1
   name_prefix = "${local.name_prefix}-users-logical-"
-  family      = "aurora-postgresql15"
-  description = "users-cluster DMS CDC용 — logical replication 활성화"
+  family      = "postgres15"
+  description = "users RDS DMS CDC용 — logical replication 활성화"
 
   parameter {
     name  = "log_connections"
@@ -29,7 +38,6 @@ resource "aws_rds_cluster_parameter_group" "users_logical" {
     value = "pg_stat_statements"
   }
 
-  # DMS CDC를 위한 Logical Replication 활성화
   parameter {
     name         = "rds.logical_replication"
     value        = "1"
@@ -42,6 +50,43 @@ resource "aws_rds_cluster_parameter_group" "users_logical" {
 
   tags = {
     Name = "${local.name_prefix}-users-logical-params"
+  }
+}
+
+# Aurora Cluster용 파라미터 그룹 (use_aurora = true)
+resource "aws_rds_cluster_parameter_group" "users_logical" {
+  count       = var.use_aurora ? 1 : 0
+  name_prefix = "${local.name_prefix}-users-logical-aurora-"
+  family      = "aurora-postgresql15"
+  description = "users Aurora DMS CDC용 — logical replication 활성화"
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+
+  parameter {
+    name  = "log_disconnections"
+    value = "1"
+  }
+
+  parameter {
+    name  = "shared_preload_libraries"
+    value = "pg_stat_statements"
+  }
+
+  parameter {
+    name         = "rds.logical_replication"
+    value        = "1"
+    apply_method = "pending-reboot"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "${local.name_prefix}-users-logical-aurora-params"
   }
 }
 

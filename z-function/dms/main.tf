@@ -32,14 +32,6 @@ data "terraform_remote_state" "foundation" {
   }
 }
 
-# database-rds 모듈에서 RDS 정보 참조
-data "terraform_remote_state" "database_rds" {
-  backend = "local"
-  config = {
-    path = "../../database-rds/terraform.tfstate"
-  }
-}
-
 # Secrets Manager에서 source DB 자격증명 참조 (users-cluster)
 data "aws_secretsmanager_secret_version" "users_cluster" {
   secret_id = "${var.project_name}-${var.environment}-users-cluster-secret"

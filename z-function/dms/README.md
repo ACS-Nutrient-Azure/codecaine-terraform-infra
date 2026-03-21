@@ -75,6 +75,130 @@ users DB에서 INSERT/UPDATE/DELETE 발생
 
 ---
 
+## 실제 사용 시 수정 포인트
+
+### 1. `terraform.tfvars` — 필수 수정
+
+환경에 맞게 값을 변경한다.
+
+```hcl
+region       = "ap-northeast-2"   # AWS 리전
+project_name = "cdci"              # 변경 시 Secret 이름·리소스 이름 전체 영향
+environment  = "prd"               # dev / prd
+
+replication_instance_class   = "dms.t3.medium"  # 데이터 적으면 dms.t3.micro 가능
+replication_instance_storage = 50               # GB
+
+migration_type = "full-load-and-cdc"  # 최초 1회만 full-load 필요하면 "full-load"
+```
+
+---
+
+### 2. `main.tf` — remote state 경로 확인
+
+foundation tfstate 경로만 참조한다. 다른 위치에서 실행하거나 backend를 S3로 변경한 경우 수정 필요.
+
+```hcl
+data "terraform_remote_state" "foundation" {
+  backend = "local"
+  config = {
+    path = "../../foundation/terraform.tfstate"  # ← 실제 경로로 수정
+  }
+}
+```
+
+> Secrets Manager 이름은 `${project_name}-${environment}-users-cluster-secret` 패턴으로 자동 조합된다.
+> `terraform.tfvars`의 `project_name`, `environment`를 변경하면 자동으로 따라간다.
+
+---
+
+### 3. `outputs.tf` + `dms.tf` 상단 주석 — 인스턴스 식별자 수정
+
+RDS 인스턴스 식별자가 `cdci-prd-users` 로 하드코딩되어 있다.
+`project_name` 또는 `environment`를 변경했다면 두 파일 모두 수정한다.
+
+```
+현재: cdci-prd-users
+패턴: {project_name}-{environment}-users
+```
+
+수정 위치:
+- `outputs.tf` — `users_logical_param_group_name` description 내 `--db-instance-identifier` 값
+- `dms.tf` — 상단 주석의 `--db-instance-identifier` 값
+
+---
+
+### 4. `dms.tf` — 테이블/컬럼명이 다른 경우
+
+source 또는 target의 실제 테이블명·컬럼명이 다르다면 `table_mappings` 내 해당 rule을 수정한다.
+
+**테이블명 변경 예시** (source 테이블명이 다른 경우):
+```hcl
+# selection rule의 table-name 수정
+object-locator = {
+  schema-name = "public"
+  table-name  = "실제_source_테이블명"  # ← 수정
+}
+
+# rename transformation의 value 수정
+value = "실제_target_테이블명"  # ← 수정
+```
+
+**컬럼 추가/제거 예시** (새 컬럼이 생긴 경우):
+```hcl
+{
+  rule-type   = "transformation"
+  rule-id     = "새_고유_번호"   # ← 기존 rule-id와 중복 금지
+  rule-name   = "rename-새컬럼"
+  rule-action = "rename"
+  rule-target = "column"
+  object-locator = {
+    schema-name = "public"
+    table-name  = "source_테이블명"
+    column-name = "source_컬럼명"
+  }
+  value = "target_컬럼명"
+},
+```
+
+---
+
+### 5. RDS Single → Aurora 전환 시
+
+`terraform.tfvars`의 `use_aurora` 값 하나만 바꾸면 된다.
+
+```hcl
+# terraform.tfvars
+use_aurora = true   # false(현재, RDS Single) → true(Aurora)로 변경
+```
+
+`terraform apply` 하면 자동으로:
+- `aws_db_parameter_group` 삭제 → `aws_rds_cluster_parameter_group` 생성
+- family `postgres15` → `aurora-postgresql15` 전환
+- output의 파라미터 그룹 이름도 Aurora용으로 변경됨
+
+전환 후 1-1 단계의 CLI 명령어가 달라진다:
+
+| 항목 | RDS Single (`use_aurora = false`) | Aurora (`use_aurora = true`) |
+|---|---|---|
+| 적용 CLI | `modify-db-instance` | `modify-db-cluster` |
+| 재시작 대상 식별자 | `{project}-{env}-users` | `{project}-{env}-users-cluster-wo` |
+
+---
+
+### 수정 포인트 요약
+
+| 파일 | 수정 항목 | 수정 빈도 |
+|---|---|---|
+| `terraform.tfvars` | project_name, environment, instance_class | **필수** |
+| `main.tf` | foundation remote state 경로 | backend 변경 시 |
+| `outputs.tf` | 인스턴스 식별자 하드코딩 (`cdci-prd-users`) | project_name/environment 변경 시 |
+| `dms.tf` 상단 주석 | 인스턴스 식별자 하드코딩 | project_name/environment 변경 시 |
+| `dms.tf` table_mappings | 테이블명·컬럼명 | 스키마 변경 시 |
+| `dms.tf` parameter group | RDS Single/Aurora 전환 시 리소스 타입·family 변경 | RDS 유형 변경 시 |
+
+---
+
 ## 최초 배포 순서
 
 ### 1. Source DB 사전 설정

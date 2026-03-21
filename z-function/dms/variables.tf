@@ -32,6 +32,12 @@ variable "migration_type" {
   default     = "full-load-and-cdc"
 }
 
+variable "use_aurora" {
+  description = "Aurora Cluster 사용 여부. false = RDS Single (현재), true = Aurora Cluster (나중에 전환 시)"
+  type        = bool
+  default     = false
+}
+
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
 }

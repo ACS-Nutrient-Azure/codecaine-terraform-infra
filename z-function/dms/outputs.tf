@@ -24,19 +24,8 @@ output "replication_task_arn" {
 }
 
 output "users_logical_param_group_name" {
-  description = <<EOT
-users-cluster Logical Replication 파라미터 그룹 이름
-apply 완료 후 아래 명령어로 users-cluster에 적용 후 재시작 필요:
-
-  aws rds modify-db-cluster \
-    --db-cluster-identifier cdci-prd-users-cluster \
-    --db-cluster-parameter-group-name <이 값> \
-    --apply-immediately
-
-  aws rds reboot-db-instance \
-    --db-instance-identifier cdci-prd-users-cluster-wo
-EOT
-  value = aws_rds_cluster_parameter_group.users_logical.name
+  description = "users Logical Replication 파라미터 그룹 이름 (apply 후 README 1-1 단계 참고)"
+  value = var.use_aurora ? aws_rds_cluster_parameter_group.users_logical[0].name : aws_db_parameter_group.users_logical[0].name
 }
 
 output "dms_security_group_id" {
