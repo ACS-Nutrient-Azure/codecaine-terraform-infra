@@ -5,4 +5,4 @@ region       = "ap-northeast-2"
 # GitHub Actions OIDC 설정
 create_github_oidc = true
 github_org         = "ACS-Nutrients" # 실제 GitHub 조직명으로 변경
-github_repo        = "cdci-infra"    # 실제 GitHub 레포명으로 변경
+github_repo        = "codecaine*"    # codecaine-python-xxx, codecaine-react-xxx 등 모든 레포 허용

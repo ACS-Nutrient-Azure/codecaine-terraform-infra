@@ -83,10 +83,10 @@ use_existing_vpc = true
 ```bash
 # AWS 콘솔에서 키 페어가 이미 생성되어 있어야 합니다
 # 또는 AWS CLI로 확인:
-aws ec2 describe-key-pairs --key-names codecaine
+aws ec2 describe-key-pairs --key-names codecaine_keypair
 
 # terraform.tfvars에 키 이름 설정
-bastion_key_name = "codecaine"
+bastion_key_name = "codecaine_keypair"
 ```
 
 ### 3. Terraform 실행

@@ -372,6 +372,14 @@ resource "aws_ecs_task_definition" "services" {
           {
             name  = "SKIP_AUTH"
             value = "false"
+          },
+          {
+            name  = "REDIS_HOST"
+            value = aws_elasticache_cluster.chatbot.cache_nodes[0].address
+          },
+          {
+            name  = "REDIS_PORT"
+            value = tostring(aws_elasticache_cluster.chatbot.port)
           }
         ] : [],
         # history 전용 환경변수

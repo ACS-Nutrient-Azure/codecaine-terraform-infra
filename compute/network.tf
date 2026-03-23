@@ -9,4 +9,5 @@ locals {
   alb_security_group_id       = data.terraform_remote_state.foundation[0].outputs.alb_security_group_id
   ecs_tasks_security_group_id = data.terraform_remote_state.foundation[0].outputs.ecs_tasks_security_group_id
   rds_security_group_id       = data.terraform_remote_state.foundation[0].outputs.rds_security_group_id
+  redis_security_group_id     = data.terraform_remote_state.foundation[0].outputs.redis_security_group_id
 }

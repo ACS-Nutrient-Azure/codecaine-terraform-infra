@@ -91,7 +91,7 @@ variable "bastion_instance_type" {
 }
 
 variable "bastion_key_name" {
-  description = "EC2 key pair name for bastion host SSH access (e.g., codecaine)"
+  description = "EC2 key pair name for bastion host SSH access (e.g., codecaine_keypair)"
   type        = string
 }
 
@@ -112,15 +112,28 @@ variable "use_existing_vpc" {
 # route53_zone_id는 security remote state에서 자동 참조
 
 variable "domain_name" {
-  description = "Root domain name (e.g., yujeong91.shop)"
+  description = "Root domain name (e.g., codecaine.store)"
   type        = string
   default     = ""
 }
 
 variable "subdomain_prefix" {
-  description = "Subdomain prefix for the service (e.g., codecaine → codecaine.yujeong91.shop)"
+  description = "Subdomain prefix for the service (e.g., codecaine → www.codecaine.store)"
   type        = string
-  default     = "codecaine"
+  default     = "www"
+}
+
+# Redis Configuration
+variable "redis_node_type" {
+  description = "ElastiCache Redis node type"
+  type        = string
+  default     = "cache.t3.micro"
+}
+
+variable "redis_engine_version" {
+  description = "ElastiCache Redis engine version"
+  type        = string
+  default     = "7.1"
 }
 
 # Service Deployment Configuration

@@ -6,6 +6,13 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket  = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key     = "compute/terraform.tfstate"
+    region  = "ap-northeast-2"
+    encrypt = true
+  }
 }
 
 provider "aws" {
@@ -24,36 +31,44 @@ provider "aws" {
 # 선택적 의존성: 기존 VPC 사용 시에만 참조
 data "terraform_remote_state" "foundation" {
   count   = var.use_existing_vpc ? 1 : 0
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../foundation/terraform.tfstate"
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "foundation/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }
 
 # ECR 모듈 참조
 data "terraform_remote_state" "ecr" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../ecr/terraform.tfstate"
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "ecr/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }
 
 # S3 버킷 참조
 data "terraform_remote_state" "s3_buckets" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../s3-buckets/terraform.tfstate"
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "s3-buckets/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }
 
 # Security 모듈 참조 (Route53 Zone ID, ACM Certificate ARN)
 data "terraform_remote_state" "security" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../security/terraform.tfstate"
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "security/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }

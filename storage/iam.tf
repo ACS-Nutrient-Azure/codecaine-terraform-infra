@@ -93,8 +93,6 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
         Effect = "Allow"
         Action = [
           "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition",
           "ecs:UpdateService"
         ]
         Resource = [
@@ -104,9 +102,11 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
         ]
       },
       {
-        # ecs:RegisterTaskDefinition은 task-definition ARN 외에 * 도 필요
-        Effect   = "Allow"
-        Action   = "ecs:RegisterTaskDefinition"
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition"
+        ]
         Resource = "*"
       },
       {

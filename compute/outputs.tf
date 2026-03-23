@@ -102,3 +102,13 @@ output "bastion_security_group_id" {
   description = "Bastion host security group ID"
   value       = aws_security_group.bastion.id
 }
+
+output "redis_endpoint" {
+  description = "ElastiCache Redis endpoint for chatbot"
+  value       = aws_elasticache_cluster.chatbot.cache_nodes[0].address
+}
+
+output "redis_port" {
+  description = "ElastiCache Redis port"
+  value       = aws_elasticache_cluster.chatbot.port
+}

@@ -19,8 +19,8 @@ cpu_target_value           = 70
 memory_target_value        = 80
 request_count_target_value = 1000
 
-domain_name      = "yujeong91.shop"
-subdomain_prefix = "codecaine"
+domain_name      = "codecaine.store"
+subdomain_prefix = "www"
 
 # 모니터링
 enable_container_insights = false # 비용 발생
@@ -29,10 +29,16 @@ enable_ecs_exec           = false # 디버깅용
 
 # Bastion Host
 bastion_instance_type = "t3.micro"
-bastion_key_name      = "tera-test" # tera-test.pem 키 사용
+bastion_key_name      = "codecaine_keypair" # tera-test.pem 키 사용
 bastion_allowed_cidrs = [
   "0.0.0.0/0"
 ]
+
+# ============================================
+# Redis (ElastiCache) 설정
+# ============================================
+redis_node_type      = "cache.t3.micro"
+redis_engine_version = "7.1"
 
 # ============================================
 # 배포할 서비스 설정 (ECR 이미지가 있는 서비스만)
