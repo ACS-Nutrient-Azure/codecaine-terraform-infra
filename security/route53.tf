@@ -6,7 +6,7 @@ resource "aws_route53_zone" "main" {
   count    = var.create_route53_zone ? 1 : 0
   provider = aws.route53
 
-  name = var.domain_name # 루트 도메인 (yujeong91.shop)
+  name = var.domain_name # 루트 도메인 (codecaine.store)
 
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-ROUTE53-ZONE"

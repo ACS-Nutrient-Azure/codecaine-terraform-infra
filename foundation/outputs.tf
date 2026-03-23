@@ -52,3 +52,8 @@ output "private_app_route_table_id" {
   description = "Private app route table ID for NAT Gateway route"
   value       = aws_route_table.private_app.id
 }
+
+output "redis_security_group_id" {
+  description = "Redis ElastiCache security group ID"
+  value       = aws_security_group.redis.id
+}

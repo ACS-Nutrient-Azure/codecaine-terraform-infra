@@ -15,14 +15,14 @@ variable "environment" {
 }
 
 variable "domain_name" {
-  description = "Root domain name for Route53 Zone and ACM certificate (e.g., yujeong91.shop)"
+  description = "Root domain name for Route53 Zone and ACM certificate (e.g., codecaine.store)"
   type        = string
 }
 
 variable "subdomain_prefix" {
-  description = "Subdomain prefix for the service (e.g., codecaine → codecaine.yujeong91.shop)"
+  description = "Subdomain prefix for the service (e.g., codecaine → www.codecaine.store)"
   type        = string
-  default     = "codecaine"
+  default     = "www"
 }
 
 variable "route53_zone_id" {

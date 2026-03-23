@@ -20,8 +20,21 @@ variable "create_github_oidc" {
   default     = true
 }
 
-variable "github_repo" {
-  description = "GitHub repository (format: owner/repo)"
+variable "github_org" {
+  description = "GitHub 조직명"
   type        = string
   default     = ""
+}
+
+variable "github_repo" {
+  description = "GitHub 레포명"
+  type        = string
+  default     = ""
+}
+
+variable "github_oidc_thumbprint" {
+  description = "GitHub OIDC Provider thumbprint"
+  type        = string
+  # 변경되는 경우 https://github.blog/changelog 에서 확인
+  default = "6938fd4d98bab03faadb97b34396831e3780aea1"
 }

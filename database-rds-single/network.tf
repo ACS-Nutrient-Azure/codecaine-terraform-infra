@@ -1,13 +1,19 @@
-# 임시 테스트용 하드코딩 (foundation remote state 미참조)
-# 실제 값: foundation terraform.tfstate에서 확인
-
-locals {
-  vpc_id                = "vpc-0e1f9143287c6e086"
-  private_db_subnet_ids = ["subnet-0877ff3bdf71c3859", "subnet-062dfbf577aa64234"]
-  rds_security_group_id = "sg-073c2caf2035184f3"
+data "terraform_remote_state" "foundation" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "foundation/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
 }
 
-# DB Subnet Group 직접 생성 (foundation에 의존하지 않음)
+locals {
+  vpc_id                = data.terraform_remote_state.foundation.outputs.vpc_id
+  private_db_subnet_ids = data.terraform_remote_state.foundation.outputs.private_db_subnet_ids
+  rds_security_group_id = data.terraform_remote_state.foundation.outputs.rds_security_group_id
+}
+
+# DB Subnet Group 직접 생성
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-${var.environment}-db-subnet-group-single"
   subnet_ids = local.private_db_subnet_ids

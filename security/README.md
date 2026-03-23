@@ -41,14 +41,14 @@ Zone ID가 없으면 검증 레코드를 생성할 수 없어 **인증서 발급
 1. Zone ID 찾기:
 ```bash
 # AWS CLI 사용
-aws route53 list-hosted-zones --query "HostedZones[?Name=='codecaine.yujeong91.shop.'].Id" --output text | cut -d'/' -f3
+aws route53 list-hosted-zones --query "HostedZones[?Name=='www.codecaine.store.'].Id" --output text | cut -d'/' -f3
 ```
 
 2. `terraform.tfvars` 설정:
 ```hcl
 create_route53_zone = false
 route53_zone_id     = "Z1234567890ABC"  # 실제 Zone ID 입력
-domain_name         = "codecaine.yujeong91.shop"
+domain_name         = "www.codecaine.store"
 ```
 
 #### 옵션 2: 신규 Route53 Zone 생성
@@ -58,7 +58,7 @@ domain_name         = "codecaine.yujeong91.shop"
 ```hcl
 create_route53_zone = true
 route53_zone_id     = ""  # 비워두기
-domain_name         = "codecaine.yujeong91.shop"
+domain_name         = "www.codecaine.store"
 ```
 
 2. Terraform 배포 후 Name Server 확인:

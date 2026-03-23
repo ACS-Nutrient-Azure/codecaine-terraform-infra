@@ -3,10 +3,12 @@
 
 # S3 버킷 참조
 data "terraform_remote_state" "s3_buckets" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../s3-buckets/terraform.tfstate"
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "s3-buckets/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }
 

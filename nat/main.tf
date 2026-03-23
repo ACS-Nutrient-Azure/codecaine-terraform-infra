@@ -6,6 +6,13 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket  = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key     = "nat/terraform.tfstate"
+    region  = "ap-northeast-2"
+    encrypt = true
+  }
 }
 
 provider "aws" {
@@ -21,9 +28,11 @@ provider "aws" {
 }
 
 data "terraform_remote_state" "foundation" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../foundation/terraform.tfstate"
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "foundation/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }

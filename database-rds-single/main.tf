@@ -10,6 +10,13 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  backend "s3" {
+    bucket  = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key     = "database-rds-single/terraform.tfstate"
+    region  = "ap-northeast-2"
+    encrypt = true
+  }
 }
 
 provider "aws" {

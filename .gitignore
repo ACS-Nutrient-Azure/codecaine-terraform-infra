@@ -11,7 +11,7 @@
 **/*_override.tf.json
 
 # Sensitive files
-**/*.tfvars
+# **/*.tfvars
 **/*.tfvars.json
 **/secrets.auto.tfvars
 

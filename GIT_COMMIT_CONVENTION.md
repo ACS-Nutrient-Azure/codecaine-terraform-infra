@@ -19,7 +19,7 @@ CodeCaine 프로젝트의 Git 커밋 메시지 작성 규칙입니다.
 | Type | 설명 | 예시 |
 |------|------|------|
 | `feat` | 새로운 기능 추가 | `feat(history): 히스토리 조회 API 추가` |
-| `fix` | 버그 수정 | `fix(mypage): 프로필 업데이트 오류 수정` |
+| `fix` | 버그 수정 | `fix(users): 프로필 업데이트 오류 수정` |
 | `docs` | 문서 수정 | `docs(readme): 설치 가이드 업데이트` |
 | `style` | 코드 포맷팅, 세미콜론 누락 등 | `style(analysis): 코드 포맷팅 적용` |
 | `refactor` | 코드 리팩토링 | `refactor(chatbot): 응답 로직 개선` |
@@ -36,7 +36,7 @@ CodeCaine 프로젝트의 Git 커밋 메시지 작성 규칙입니다.
 
 **서비스별:**
 - `history` - 히스토리 서비스
-- `mypage` - 마이페이지 서비스
+- `users` - 마이페이지 서비스
 - `analysis` - 분석 서비스
 - `chatbot` - 챗봇 서비스
 - `frontend` - 프론트엔드
@@ -67,7 +67,7 @@ CodeCaine 프로젝트의 Git 커밋 메시지 작성 규칙입니다.
 **좋은 예:**
 ```
 feat(history): 날짜별 히스토리 필터링 기능 추가
-fix(mypage): 프로필 이미지 업로드 오류 수정
+fix(users): 프로필 이미지 업로드 오류 수정
 docs(readme): API 문서 링크 추가
 ```
 
@@ -132,7 +132,7 @@ Closes #123
 
 ### 예시 2: 버그 수정
 ```
-fix(mypage): 프로필 이미지 업로드 오류 수정
+fix(users): 프로필 이미지 업로드 오류 수정
 
 파일 크기 제한을 5MB로 증가하고
 지원 형식에 WebP 추가
@@ -215,7 +215,7 @@ fi
 git commit -m "feat(history): 검색 기능 추가"
 
 # 버그 수정
-git commit -m "fix(mypage): 프로필 저장 오류 수정"
+git commit -m "fix(users): 프로필 저장 오류 수정"
 
 # 문서 수정
 git commit -m "docs(api): API 명세서 업데이트"

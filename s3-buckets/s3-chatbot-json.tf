@@ -48,6 +48,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "chatbot_json" {
     id     = "delete-old-json"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 90 # 90일 후 삭제
     }
@@ -60,6 +62,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "chatbot_json" {
   rule {
     id     = "transition-to-ia"
     status = "Enabled"
+
+    filter {}
 
     transition {
       days          = 30
