@@ -1,22 +1,29 @@
 # ============================================
 # Random Passwords
+# DMS 비호환 특수문자 제외: ; + % $
 # ============================================
 resource "random_password" "users" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}:?"
+  override_special = "!#&*()-_=[]{}:?"
 }
 
 resource "random_password" "history" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}:?"
+  override_special = "!#&*()-_=[]{}:?"
 }
 
 resource "random_password" "analysis" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}:?"
+  override_special = "!#&*()-_=[]{}:?"
+}
+
+resource "random_password" "chatbot" {
+  length           = 32
+  special          = true
+  override_special = "!#&*()-_=[]{}:?"
 }
 
 # ============================================
@@ -88,11 +95,32 @@ resource "aws_secretsmanager_secret_version" "analysis" {
   })
 }
 
+resource "aws_secretsmanager_secret" "chatbot" {
+  name                    = "${var.project_name}-${var.environment}-chatbot-cluster-secret"
+  description             = "Chatbot RDS credentials"
+  recovery_window_in_days = 0
+
+  tags = {
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-CLUSTER-SECRET"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "chatbot" {
+  secret_id = aws_secretsmanager_secret.chatbot.id
+  secret_string = jsonencode({
+    username = aws_db_instance.chatbot.username
+    password = random_password.chatbot.result
+    engine   = "postgres"
+    host     = aws_db_instance.chatbot.address
+    port     = var.postgres_port
+    dbname   = aws_db_instance.chatbot.db_name
+  })
+}
+
 # ============================================
 # SSM Parameter Store
 # ============================================
 
-# users
 resource "aws_ssm_parameter" "users_endpoint" {
   name  = "/${var.project_name}/${var.environment}/rds/users-cluster/endpoint"
   type  = "String"
@@ -121,7 +149,6 @@ resource "aws_ssm_parameter" "users_username" {
   tags  = { Name = "${var.project_name}-${var.environment}-users-username" }
 }
 
-# history
 resource "aws_ssm_parameter" "history_endpoint" {
   name  = "/${var.project_name}/${var.environment}/rds/history-cluster/endpoint"
   type  = "String"
@@ -150,7 +177,6 @@ resource "aws_ssm_parameter" "history_username" {
   tags  = { Name = "${var.project_name}-${var.environment}-history-username" }
 }
 
-# analysis
 resource "aws_ssm_parameter" "analysis_endpoint" {
   name  = "/${var.project_name}/${var.environment}/rds/analysis-cluster/endpoint"
   type  = "String"
@@ -179,35 +205,6 @@ resource "aws_ssm_parameter" "analysis_username" {
   tags  = { Name = "${var.project_name}-${var.environment}-analysis-username" }
 }
 
-resource "random_password" "chatbot" {
-  length           = 32
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}:?"
-}
-
-resource "aws_secretsmanager_secret" "chatbot" {
-  name                    = "${var.project_name}-${var.environment}-chatbot-cluster-secret"
-  description             = "Chatbot RDS credentials"
-  recovery_window_in_days = 0
-
-  tags = {
-    Name = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-CLUSTER-SECRET"
-  }
-}
-
-resource "aws_secretsmanager_secret_version" "chatbot" {
-  secret_id = aws_secretsmanager_secret.chatbot.id
-  secret_string = jsonencode({
-    username = aws_db_instance.chatbot.username
-    password = random_password.chatbot.result
-    engine   = "postgres"
-    host     = aws_db_instance.chatbot.address
-    port     = var.postgres_port
-    dbname   = aws_db_instance.chatbot.db_name
-  })
-}
-
-# chatbot SSM Parameters
 resource "aws_ssm_parameter" "chatbot_endpoint" {
   name  = "/${var.project_name}/${var.environment}/rds/chatbot-cluster/endpoint"
   type  = "String"

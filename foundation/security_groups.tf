@@ -169,14 +169,14 @@ resource "aws_security_group_rule" "ecs_egress_to_redis" {
   security_group_id        = aws_security_group.ecs_tasks.id
 }
 
-resource "aws_security_group_rule" "ecs_egress_to_vpce" {
-  type                     = "egress"
-  description              = "HTTPS to VPC endpoints (ECR, Secrets Manager, etc.)"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.vpc_endpoints.id
-  security_group_id        = aws_security_group.ecs_tasks.id
+resource "aws_security_group_rule" "ecs_egress_https_internet" {
+  type              = "egress"
+  description       = "HTTPS to internet via NAT Gateway (ECR, Secrets Manager, etc.)"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.ecs_tasks.id
 }
 
 # =============================================================================

@@ -7,6 +7,13 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket  = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key     = "dms/terraform.tfstate"
+    region  = "ap-northeast-2"
+    encrypt = true
+  }
 }
 
 provider "aws" {
@@ -66,6 +73,10 @@ data "aws_secretsmanager_secret_version" "history_cluster" {
   secret_id = "${var.project_name}-${var.environment}-history-cluster-secret"
 }
 
+data "aws_secretsmanager_secret_version" "chatbot_cluster" {
+  secret_id = "${var.project_name}-${var.environment}-chatbot-cluster-secret"
+}
+
 locals {
   vpc_id                = data.aws_vpc.main.id
   private_db_subnet_ids = data.aws_subnets.private_db.ids
@@ -74,4 +85,5 @@ locals {
   users_secret    = jsondecode(data.aws_secretsmanager_secret_version.users_cluster.secret_string)
   analysis_secret = jsondecode(data.aws_secretsmanager_secret_version.analysis_cluster.secret_string)
   history_secret  = jsondecode(data.aws_secretsmanager_secret_version.history_cluster.secret_string)
+  chatbot_secret  = jsondecode(data.aws_secretsmanager_secret_version.chatbot_cluster.secret_string)
 }
