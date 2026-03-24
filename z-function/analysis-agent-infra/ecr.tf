@@ -1,5 +1,6 @@
 resource "aws_ecr_repository" "analysis_agent" {
-  name                 = var.project_name
+  name                 = "${var.project_name}-analysis-agentcore"
+
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
