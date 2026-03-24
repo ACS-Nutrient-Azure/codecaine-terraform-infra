@@ -1,7 +1,7 @@
-output "agentcore_runtime_arn" {
-  description = "App 환경변수 AGENTCORE_RUNTIME_ARN에 설정"
-  value       = aws_bedrockagentcore_runtime.analysis_agent.agent_runtime_arn
-}
+# output "agentcore_runtime_arn" {
+#   description = "App 환경변수 AGENTCORE_RUNTIME_ARN에 설정"
+#   value       = aws_bedrockagentcore_runtime.analysis_agent.agent_runtime_arn
+# }
 
 output "ecr_repository_url" {
   description = "ECR 레포 URL (GitHub Actions deploy.yml에서 사용)"
