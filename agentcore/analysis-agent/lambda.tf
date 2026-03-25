@@ -5,7 +5,7 @@ data "archive_file" "nutrient_calc" {
 }
 
 resource "aws_lambda_function" "nutrient_calc" {
-  function_name = "${var.project_name}-nutrient-calc"
+  function_name = lower("${var.project_name}-${var.environment}-nutrient-calc")
   runtime       = var.lambda_runtime
   handler       = "handler.lambda_handler"
   role          = aws_iam_role.lambda_exec.arn
@@ -14,6 +14,4 @@ resource "aws_lambda_function" "nutrient_calc" {
 
   filename         = data.archive_file.nutrient_calc.output_path
   source_code_hash = data.archive_file.nutrient_calc.output_base64sha256
-
-  tags = local.tags
 }

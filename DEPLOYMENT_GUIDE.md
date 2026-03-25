@@ -334,12 +334,18 @@ aws ecs describe-services \
 ### 전체 삭제
 ```bash
 # 역순으로 삭제
-cd compute && terraform destroy -auto-approve
-cd ../database && terraform destroy -auto-approve
-cd ../nat && terraform destroy -auto-approve
-cd ../security && terraform destroy -auto-approve
-cd ../storage && terraform destroy -auto-approve
-cd ../foundation && terraform destroy -auto-approve
+cd compute                          && terraform destroy -auto-approve
+cd agentcore/supervisor-agent       && terraform destroy -auto-approve
+cd agentcore/chatbot-agent          && terraform destroy -auto-approve
+cd agentcore/analysis-agent         && terraform destroy -auto-approve
+cd agentcore/provisioner            && terraform destroy -auto-approve
+cd database-rds                     && terraform destroy -auto-approve
+cd nat                              && terraform destroy -auto-approve
+cd security                         && terraform destroy -auto-approve
+cd storage                          && terraform destroy -auto-approve
+cd s3-buckets                       && terraform destroy -auto-approve
+cd ecr                              && terraform destroy -auto-approve
+cd foundation                       && terraform destroy -auto-approve
 ```
 
 ### 비용 발생 리소스만 삭제 (개발 중단시)

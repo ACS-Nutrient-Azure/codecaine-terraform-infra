@@ -1,13 +1,9 @@
 # ── AWS ──────────────────────────────────────────────────────────
 
-variable "aws_region" {
+variable "region" {
   description = "AWS 리전"
   type        = string
-}
-
-variable "aws_account_id" {
-  description = "AWS 계정 ID"
-  type        = string
+  default     = "ap-northeast-2"
 }
 
 # ── 프로젝트 ─────────────────────────────────────────────────────
@@ -18,7 +14,7 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "배포 환경 (dev / prod)"
+  description = "배포 환경 (dev / stg / prd)"
   type        = string
 }
 
@@ -32,13 +28,6 @@ variable "github_org" {
 variable "github_repo" {
   description = "GitHub 레포명"
   type        = string
-}
-
-variable "github_oidc_thumbprint" {
-  description = "GitHub OIDC Provider thumbprint"
-  type        = string
-  # 변경되는 경우 https://github.blog/changelog 에서 확인
-  default     = "6938fd4d98bab03faadb97b34396831e3780aea1"
 }
 
 # ── Lambda ───────────────────────────────────────────────────────
@@ -82,19 +71,4 @@ variable "agentcore_network_mode" {
 }
 
 # ── ECR ──────────────────────────────────────────────────────────
-
-variable "ecr_image_count_limit" {
-  description = "ECR 보관 이미지 최대 개수"
-  type        = number
-  default     = 10
-}
-
-# ── locals ───────────────────────────────────────────────────────
-
-locals {
-  tags = {
-    Project     = var.project_name
-    Environment = var.environment
-    ManagedBy   = "terraform"
-  }
-}
+# ECR 레포는 ecr 모듈에서 관리 (ecr/ecr.tf)
