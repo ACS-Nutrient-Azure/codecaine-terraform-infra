@@ -72,3 +72,14 @@ data "terraform_remote_state" "security" {
     region = "ap-northeast-2"
   }
 }
+
+# AgentCore analysis-agent 참조
+data "terraform_remote_state" "analysis_agent" {
+  backend = "s3"
+
+  config = {
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "analysis-agent-infra/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}

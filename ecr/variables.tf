@@ -20,6 +20,12 @@ variable "services" {
   default     = ["users", "history", "chatbot", "analysis", "frontend"]
 }
 
+variable "agents" {
+  description = "List of AgentCore agents"
+  type        = list(string)
+  default     = ["analysis-agent", "chatbot-agent", "supervisor-agent"]
+}
+
 variable "image_tag_mutability" {
   description = "Image tag mutability setting"
   type        = string

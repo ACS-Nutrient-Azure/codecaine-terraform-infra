@@ -184,21 +184,85 @@ resource "aws_iam_role_policy" "ecs_task_runtime" {
         ]
         Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/*"
       },
-      # users 서비스의 S3_BUCKET_NAME 환경변수에 대응하는 S3 접근 권한
+      # ECS Exec (enable_ecs_exec = true 시 필요)
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
         ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# ECS Task Role - users 전용 권한 (S3 codef-data, Textract)
+resource "aws_iam_role" "ecs_task_users" {
+  name = "${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-USERS-ROLE"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-USERS-ROLE"
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_task_users_policy" {
+  name = "${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-USERS-POLICY"
+  role = aws_iam_role.ecs_task_users.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-${var.environment}-*-cluster-secret-*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameters", "ssm:GetParameter"]
+        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
         Resource = [
-          "arn:aws:s3:::${var.project_name}-${var.environment}-codef",
-          "arn:aws:s3:::${var.project_name}-${var.environment}-codef/*"
+          "arn:aws:s3:::${var.project_name}-${var.environment}-codef-data",
+          "arn:aws:s3:::${var.project_name}-${var.environment}-codef-data/*"
         ]
       },
-      # ECS Exec (enable_ecs_exec = true 시 필요)
+      {
+        Effect   = "Allow"
+        Action   = "textract:DetectDocumentText"
+        Resource = "*"
+      },
+      {
+        Sid    = "BedrockAgentCoreInvoke"
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeAgent",
+          "bedrock:GetAgent",
+          "bedrock:ListAgents",
+          "bedrock:InvokeModel",
+          "bedrock-agentcore:InvokeAgentRuntime",
+          "bedrock-agentcore:InvokeAgentRuntimeWithResponseStream",
+        ]
+        Resource = "*"
+      },
       {
         Effect = "Allow"
         Action = [
@@ -282,6 +346,19 @@ resource "aws_iam_role_policy" "ecs_task_chatbot_s3" {
           "ssmmessages:OpenDataChannel"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "BedrockAgentCoreInvoke"
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeAgent",
+          "bedrock:GetAgent",
+          "bedrock:ListAgents",
+          "bedrock:InvokeModel",
+          "bedrock-agentcore:InvokeAgentRuntime",
+          "bedrock-agentcore:InvokeAgentRuntimeWithResponseStream",
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -297,8 +374,8 @@ resource "aws_ecs_task_definition" "services" {
   cpu                      = each.value.cpu
   memory                   = each.value.memory
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-  # chatbot은 S3 전용 Role, 나머지는 공통 Role
-  task_role_arn = each.key == "chatbot" ? aws_iam_role.ecs_task_chatbot.arn : aws_iam_role.ecs_task.arn
+  # chatbot은 S3 전용 Role, users는 Textract/codef-data Role, 나머지는 공통 Role
+  task_role_arn = each.key == "chatbot" ? aws_iam_role.ecs_task_chatbot.arn : (each.key == "users" ? aws_iam_role.ecs_task_users.arn : aws_iam_role.ecs_task.arn)
 
   container_definitions = jsonencode([
     {
@@ -393,7 +470,7 @@ resource "aws_ecs_task_definition" "services" {
         each.key == "users" ? [
           {
             name  = "S3_BUCKET_NAME"
-            value = "${var.project_name}-${var.environment}-codef"
+            value = "${var.project_name}-${var.environment}-codef-data"
           },
           {
             name  = "CODEF_CLIENT_ID"
@@ -408,7 +485,37 @@ resource "aws_ecs_task_definition" "services" {
             value = "production"
           }
         ] : [],
-        var.environment_variables
+        # analysis 전용 환경변수
+        each.key == "analysis" ? [
+          {
+            name  = "AGENTCORE_RUNTIME_ARN"
+            value = data.terraform_remote_state.analysis_agent.outputs.agentcore_runtime_arn
+          }
+        ] : [],
+        var.environment_variables,
+        # OTEL 환경변수 (AWS Distro for OpenTelemetry)
+        [
+          {
+            name  = "OTEL_SERVICE_NAME"
+            value = "${var.project_name}-${var.environment}-${each.value.name}"
+          },
+          {
+            name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+            value = "http://localhost:4317"
+          },
+          {
+            name  = "OTEL_PYTHON_DISTRO"
+            value = "aws_distro"
+          },
+          {
+            name  = "OTEL_PYTHON_CONFIGURATOR"
+            value = "aws_configurator"
+          },
+          {
+            name  = "OTEL_TRACES_SAMPLER"
+            value = "always_on"
+          }
+        ]
       )
 
       # DB 정보는 history, users, analysis에만 주입
@@ -451,6 +558,29 @@ resource "aws_ecs_task_definition" "services" {
         timeout     = 5
         retries     = 3
         startPeriod = 60
+      }
+    },
+    {
+      name      = "otel-collector"
+      image     = "public.ecr.aws/aws-observability/aws-otel-collector:latest"
+      essential = false
+
+      portMappings = [
+        {
+          containerPort = 4317
+          protocol      = "tcp"
+        }
+      ]
+
+      command = ["--config=/etc/ecs/ecs-default-config.yaml"]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.services[each.key].name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "otel"
+        }
       }
     }
   ])

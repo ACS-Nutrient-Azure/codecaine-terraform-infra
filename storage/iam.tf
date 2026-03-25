@@ -117,7 +117,8 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-EXECUTION-ROLE",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-ROLE",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-CHATBOT-ROLE"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-CHATBOT-ROLE",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${upper(var.project_name)}-${upper(var.environment)}-ECS-TASK-USERS-ROLE"
         ]
       }
     ]
