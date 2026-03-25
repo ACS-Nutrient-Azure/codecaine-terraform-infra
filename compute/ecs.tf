@@ -364,6 +364,56 @@ resource "aws_iam_role_policy" "ecs_task_chatbot_s3" {
   })
 }
 
+# Observability 공유 IAM 정책 (X-Ray + CloudWatch EMF) - ADOT sidecar용
+resource "aws_iam_policy" "ecs_observability" {
+  name        = "${upper(var.project_name)}-${upper(var.environment)}-ECS-OBSERVABILITY-POLICY"
+  description = "X-Ray traces and CloudWatch EMF metrics for ADOT collector sidecar"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "XRayAccess"
+        Effect = "Allow"
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords",
+          "xray:GetSamplingRules",
+          "xray:GetSamplingTargets",
+          "xray:GetSamplingStatisticSummaries"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "CloudWatchEMFAccess"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_observability" {
+  role       = aws_iam_role.ecs_task.name
+  policy_arn = aws_iam_policy.ecs_observability.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_users_observability" {
+  role       = aws_iam_role.ecs_task_users.name
+  policy_arn = aws_iam_policy.ecs_observability.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_chatbot_observability" {
+  role       = aws_iam_role.ecs_task_chatbot.name
+  policy_arn = aws_iam_policy.ecs_observability.arn
+}
+
 # Task Definitions
 resource "aws_ecs_task_definition" "services" {
   for_each = local.services

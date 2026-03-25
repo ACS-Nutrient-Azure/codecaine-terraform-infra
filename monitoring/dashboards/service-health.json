@@ -1,0 +1,139 @@
+{
+  "title": "Service Health",
+  "description": "ECS 서비스 상태 및 ALB 트래픽 모니터링",
+  "tags": ["ecs", "alb", "cdci"],
+  "timezone": "Asia/Seoul",
+  "refresh": "1m",
+  "time": { "from": "now-3h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "ALB 요청 수 (서비스별)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "targets": [
+        {
+          "refId": "A", "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(RequestCount) FROM \"AWS/ApplicationELB\" WHERE LoadBalancer = 'app/cdci-prd-alb/a70048e764d183e8' GROUP BY TargetGroup"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 2,
+      "title": "ALB 응답시간 P50 / P95 / P99",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "targets": [
+        {
+          "refId": "A", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "TargetResponseTime",
+          "dimensions": { "LoadBalancer": "app/cdci-prd-alb/a70048e764d183e8" },
+          "statistic": "p50", "period": "60", "alias": "P50"
+        },
+        {
+          "refId": "B", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "TargetResponseTime",
+          "dimensions": { "LoadBalancer": "app/cdci-prd-alb/a70048e764d183e8" },
+          "statistic": "p95", "period": "60", "alias": "P95"
+        },
+        {
+          "refId": "C", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "TargetResponseTime",
+          "dimensions": { "LoadBalancer": "app/cdci-prd-alb/a70048e764d183e8" },
+          "statistic": "p99", "period": "60", "alias": "P99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 3,
+      "title": "4xx / 5xx 에러 수",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "targets": [
+        {
+          "refId": "A", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HTTPCode_Target_4XX_Count",
+          "dimensions": { "LoadBalancer": "app/cdci-prd-alb/a70048e764d183e8" },
+          "statistic": "Sum", "period": "60", "alias": "4xx"
+        },
+        {
+          "refId": "B", "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HTTPCode_Target_5XX_Count",
+          "dimensions": { "LoadBalancer": "app/cdci-prd-alb/a70048e764d183e8" },
+          "statistic": "Sum", "period": "60", "alias": "5xx"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "5xx" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "4xx" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "title": "ECS CPU 사용률 (서비스별)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "targets": [
+        {
+          "refId": "A", "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT AVG(CPUUtilization) FROM \"AWS/ECS\" WHERE ClusterName = 'cdci-prd-cluster' GROUP BY ServiceName"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 5,
+      "title": "ECS 메모리 사용률 (서비스별)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "targets": [
+        {
+          "refId": "A", "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT AVG(MemoryUtilization) FROM \"AWS/ECS\" WHERE ClusterName = 'cdci-prd-cluster' GROUP BY ServiceName"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 6,
+      "title": "ECS 실행 중인 태스크 수",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "targets": [
+        {
+          "refId": "A", "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT AVG(RunningTaskCount) FROM \"ECS/ContainerInsights\" WHERE ClusterName = 'cdci-prd-cluster' GROUP BY ServiceName"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0 }] } }
+      }
+    }
+  ]
+}

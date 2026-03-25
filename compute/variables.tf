@@ -68,7 +68,7 @@ variable "request_count_target_value" {
 variable "enable_container_insights" {
   description = "Enable ECS Container Insights"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "log_retention_days" {

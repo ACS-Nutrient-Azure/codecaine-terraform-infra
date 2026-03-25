@@ -2,7 +2,7 @@
 
 ECS Fargate 기반 웹서비스 인프라 (Terraform)
 
-> **최신 업데이트**: Bastion 서버, Aurora Global Database 지원 추가
+> **최신 업데이트**: Observability 파이프라인 구축 (ADOT + X-Ray + CloudWatch + Grafana)
 > **팀**: CodeCaine (CDCI)
 
 ## 네이밍 규칙
@@ -85,6 +85,7 @@ Aurora PostgreSQL Global DB (Private DB Subnet)
 | **nat/** | NAT Gateway | ~$32 (1개) | Private 서브넷 아웃바운드 |
 | **database-rds/** | Aurora PostgreSQL | ~$43-172 | Aurora Serverless v2 |
 | **compute/** | ECS Fargate, ALB, Bastion | ~$37 | 웹서비스 + 관리 서버 |
+| **monitoring/** | AWS Managed Grafana | ~$9 | 통합 Observability 대시보드 |
 
 **총 예상 비용**: ~$112-241/month (Aurora 스케일링에 따라 변동)
 
@@ -267,10 +268,11 @@ cd ../nat && terraform destroy
 - ACM: SSL/TLS 인증서 (무료)
 - Cognito: 사용자 인증/인가
 
-### 모니터링
+### 모니터링 (Observability)
+- ADOT Sidecar: 분산 트레이싱 수집 (X-Ray)
 - CloudWatch Logs: 애플리케이션 로그
-- CloudWatch Metrics: CPU, Memory, Request
-- CloudWatch Alarms: 임계값 알림
+- CloudWatch Metrics: CPU, Memory, Request (Container Insights 포함)
+- AWS Managed Grafana: 통합 관제 대시보드
 
 ### 고가용성
 - Multi-AZ: 2개 가용 영역
@@ -306,6 +308,99 @@ cd database-rds-secondary
 terraform workspace new us-east-1
 terraform apply
 ```
+
+## Observability 구축 현황
+
+### 아키텍처
+
+```
+ECS Fargate Task
+├── App Container
+│   └── OTEL SDK (traces 생성)
+└── ADOT Sidecar (otel-collector)
+    ├── Traces  → AWS X-Ray
+    └── Metrics → CloudWatch EMF
+
+CloudWatch
+├── AWS/ECS          (CPU, Memory - 서비스별)
+├── AWS/ApplicationELB (RequestCount, TargetResponseTime, 4xx/5xx)
+└── ECS/ContainerInsights (RunningTaskCount - Container Insights)
+
+AWS Managed Grafana (g-39fdcca4d2)
+└── CDCI PRD 폴더
+    ├── ✅ Service Health     (ECS + ALB 모니터링)
+    ├── 🔜 X-Ray Traces       (분산 트레이싱)
+    └── 🔜 Business Overview  (API 트렌드 / 에러율)
+```
+
+### 진행 단계
+
+| Phase | 내용 | 상태 |
+|-------|------|------|
+| Phase 1 | ADOT 사이드카 + IAM 권한 + Container Insights 활성화 | ✅ 완료 |
+| Phase 2 | AWS Managed Grafana 워크스페이스 + SSO 접근 권한 | ✅ 완료 |
+| Phase 3 | Service Health 대시보드 (ECS + ALB) | ✅ 완료 |
+| Phase 4 | X-Ray Traces 대시보드 | 🔜 진행 예정 |
+| Phase 5 | Business Overview 대시보드 | 🔜 진행 예정 |
+| Phase 6 | CloudWatch Alarms | 🔜 미정 |
+
+### Service Health 대시보드 패널
+
+| 패널 | 메트릭 | 방식 |
+|------|--------|------|
+| ALB 요청 수 (서비스별) | `AWS/ApplicationELB` RequestCount | SQL `GROUP BY TargetGroup` |
+| ALB 응답시간 P50/P95/P99 | `AWS/ApplicationELB` TargetResponseTime | 표준 메트릭 (p50, p95, p99) |
+| 4xx / 5xx 에러 수 | `AWS/ApplicationELB` HTTPCode_Target_*XX_Count | 표준 메트릭 Sum |
+| ECS CPU 사용률 | `AWS/ECS` CPUUtilization | SQL `GROUP BY ServiceName` |
+| ECS 메모리 사용률 | `AWS/ECS` MemoryUtilization | SQL `GROUP BY ServiceName` |
+| ECS 실행 중인 태스크 수 | `ECS/ContainerInsights` RunningTaskCount | SQL `GROUP BY ServiceName` |
+
+### 주요 리소스 ID
+
+| 리소스 | 값 |
+|--------|-----|
+| Grafana Workspace ID | `g-39fdcca4d2` |
+| Grafana URL | `https://g-39fdcca4d2.grafana-workspace.ap-northeast-2.amazonaws.com` |
+| CloudWatch 데이터소스 UID | `bfh249rbispvkf` |
+| X-Ray 데이터소스 UID | `cfh299z8g6l1ce` |
+| ALB ARN suffix | `app/cdci-prd-alb/a70048e764d183e8` |
+
+### Grafana 접근
+
+인증 방식: **AWS IAM Identity Center (SSO)**
+
+```bash
+# Terraform 배포 시 서비스 계정 토큰 필요
+export TF_VAR_grafana_api_key="glsa_..."
+cd monitoring && terraform apply
+```
+
+### Grafana CloudWatch 쿼리 포맷 주의사항
+
+CloudWatch Metrics Insights SQL 사용 시:
+- 필드명: `sqlExpression` (❌ `expression` → Metric Math 전용)
+- 패널당 SQL 쿼리 **1개만** 허용 → 다중 시리즈는 `GROUP BY` 사용
+- `region: "default"` 명시 필요
+
+```json
+{
+  "metricQueryType": 1,
+  "metricEditorMode": 1,
+  "region": "default",
+  "sqlExpression": "SELECT AVG(CPUUtilization) FROM \"AWS/ECS\" WHERE ClusterName = 'cdci-prd-cluster' GROUP BY ServiceName"
+}
+```
+
+### monitoring 모듈 배포
+
+```bash
+cd monitoring
+export TF_VAR_grafana_api_key="<서비스 계정 토큰>"
+terraform init
+terraform apply
+```
+
+---
 
 ## 트러블슈팅
 
