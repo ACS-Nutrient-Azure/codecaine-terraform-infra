@@ -23,7 +23,7 @@ variable "services" {
 variable "agents" {
   description = "List of AgentCore agents"
   type        = list(string)
-  default     = ["analysis-agent", "chatbot-agent", "supervisor-agent"]
+  default     = ["analysis-agent", "chatbot-agent", "supervisor-agent", "summary-agent"]
 }
 
 variable "image_tag_mutability" {
