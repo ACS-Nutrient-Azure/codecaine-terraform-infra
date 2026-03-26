@@ -432,11 +432,11 @@
 
     {
       "id": 11,
-      "title": "Tool 승인 / 거절 패턴",
-      "type": "piechart",
-      "gridPos": { "x": 8, "y": 22, "w": 8, "h": 6 },
+      "title": "Tool 승인 패턴",
+      "type": "bargauge",
+      "gridPos": { "x": 8, "y": 22, "w": 4, "h": 6 },
       "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
-      "description": "custom metric: CDCI/AgentCore > tool_approval_total (dimension: tool_name, agent_name, result=approved|rejected)",
+      "description": "custom metric: CDCI/AgentCore > tool_approval_total WHERE result='approved'",
       "targets": [
         {
           "refId": "A",
@@ -445,9 +445,34 @@
           "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE result = 'approved' GROUP BY tool_name"
-        },
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 17,
+      "title": "Tool 거절 패턴",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 22, "w": 4, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > tool_approval_total WHERE result='rejected'",
+      "targets": [
         {
-          "refId": "B",
+          "refId": "A",
           "queryMode": "Metrics",
           "metricQueryType": 1,
           "metricEditorMode": 1,
@@ -457,20 +482,17 @@
       ],
       "options": {
         "reduceOptions": { "calcs": ["sum"] },
-        "pieType": "donut",
-        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }
+        "orientation": "horizontal",
+        "displayMode": "gradient"
       },
       "fieldConfig": {
-        "overrides": [
-          {
-            "matcher": { "id": "byFrameRefID", "options": "A" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
-          },
-          {
-            "matcher": { "id": "byFrameRefID", "options": "B" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "red", "value": null }]
           }
-        ]
+        }
       }
     },
 
