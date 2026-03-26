@@ -1,0 +1,659 @@
+{
+  "title": "Business Overview",
+  "description": "에이전트 사용 현황, 토큰 소비, Tool 실행, 캐시 효율 - 비즈니스 지표 통합 대시보드",
+  "tags": ["bedrock", "agentcore", "redis", "cdci"],
+  "timezone": "Asia/Seoul",
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+
+    {
+      "id": 100,
+      "title": "에이전트 호출 현황",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 1,
+      "title": "에이전트별 총 호출 수 (24h)",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 1, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_invocation_total (dimension: agent_name)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "valueMode": "color"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 2,
+      "title": "에이전트별 에러율 (%)",
+      "type": "bargauge",
+      "gridPos": { "x": 8, "y": 1, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_invocation_total (dimension: agent_name, status=error / status=success)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" WHERE status = 'error' GROUP BY agent_name"
+        },
+        {
+          "refId": "B",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
+        },
+        {
+          "refId": "C",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 2,
+          "region": "default",
+          "expression": "IF(B > 0, (A / B) * 100, 0)",
+          "alias": "에러율"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 3,
+      "title": "에이전트 호출 추이 (시간대별)",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 1, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_invocation_total GROUP BY agent_name",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 101,
+      "title": "토큰 사용량",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 7, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 4,
+      "title": "에이전트별 입력 토큰 (24h 합계)",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_token_input_total (dimension: agent_name, model_id)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_token_input_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "displayName": "${__field.labels.agent_name}",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "purple", "value": null }]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 5,
+      "title": "에이전트별 출력 토큰 (24h 합계)",
+      "type": "bargauge",
+      "gridPos": { "x": 8, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_token_output_total (dimension: agent_name, model_id)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_token_output_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 6,
+      "title": "모델별 토큰 사용량 추이",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_token_input/output_total (dimension: model_id)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_token_input_total) FROM \"CDCI/AgentCore\" GROUP BY model_id"
+        },
+        {
+          "refId": "B",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(agent_token_output_total) FROM \"CDCI/AgentCore\" GROUP BY model_id"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "A" },
+            "properties": [{ "id": "displayName", "value": "입력 (${__field.labels.model_id})" }]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [{ "id": "displayName", "value": "출력 (${__field.labels.model_id})" }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 102,
+      "title": "에이전트 레이턴시",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 7,
+      "title": "에이전트별 평균 응답시간",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 15, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_latency_seconds (dimension: agent_name)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT AVG(agent_latency_seconds) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "max": 30,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 15 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 8,
+      "title": "Bedrock 모델별 레이턴시 (P95)",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 15, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "AWS/Bedrock native metric - InvocationLatency by ModelId (코드 수정 불필요)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/Bedrock",
+          "metricName": "InvocationLatency",
+          "dimensions": {},
+          "statistic": "p95",
+          "period": "60",
+          "alias": "P95"
+        },
+        {
+          "refId": "B",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/Bedrock",
+          "metricName": "InvocationLatency",
+          "dimensions": {},
+          "statistic": "Average",
+          "period": "60",
+          "alias": "AVG"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
+      }
+    },
+
+    {
+      "id": 9,
+      "title": "에이전트 레이턴시 추이",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 15, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_latency_seconds GROUP BY agent_name",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT AVG(agent_latency_seconds) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 103,
+      "title": "Tool / Skill 사용 현황",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 21, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 10,
+      "title": "Tool별 실행 횟수 (24h)",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 22, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > tool_execution_total (dimension: tool_name, agent_name, status)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(tool_execution_total) FROM \"CDCI/AgentCore\" GROUP BY tool_name"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 11,
+      "title": "Tool 승인 / 거절 패턴",
+      "type": "piechart",
+      "gridPos": { "x": 8, "y": 22, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > tool_approval_total (dimension: tool_name, agent_name, result=approved|rejected)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE result = 'approved' GROUP BY tool_name"
+        },
+        {
+          "refId": "B",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE result = 'rejected' GROUP BY tool_name"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "pieType": "donut",
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }
+      },
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "A" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
+      }
+    },
+
+    {
+      "id": 12,
+      "title": "Tool 평균 실행 시간",
+      "type": "bargauge",
+      "gridPos": { "x": 16, "y": 22, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > tool_execution_duration_seconds (dimension: tool_name, agent_name)",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 1,
+          "metricEditorMode": 1,
+          "region": "default",
+          "sqlExpression": "SELECT AVG(tool_execution_duration_seconds) FROM \"CDCI/AgentCore\" GROUP BY tool_name"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 104,
+      "title": "Redis 캐시 효율",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 13,
+      "title": "캐시 히트율",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 29, "w": 6, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "AWS/ElastiCache native metric - 코드 수정 불필요",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ElastiCache",
+          "metricName": "CacheHitRate",
+          "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
+          "statistic": "Average",
+          "period": "300",
+          "alias": "캐시 히트율"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "green", "value": 0.9 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 14,
+      "title": "캐시 히트 / 미스 추이",
+      "type": "timeseries",
+      "gridPos": { "x": 6, "y": 29, "w": 10, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "AWS/ElastiCache native metric - 코드 수정 불필요",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ElastiCache",
+          "metricName": "CacheHits",
+          "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
+          "statistic": "Sum",
+          "period": "60",
+          "alias": "히트"
+        },
+        {
+          "refId": "B",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ElastiCache",
+          "metricName": "CacheMisses",
+          "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
+          "statistic": "Sum",
+          "period": "60",
+          "alias": "미스"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 15 }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "히트" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "미스" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 15,
+      "title": "Redis GET / SET 명령 수",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 29, "w": 8, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "AWS/ElastiCache native metric - 코드 수정 불필요",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ElastiCache",
+          "metricName": "GetTypeCmds",
+          "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
+          "statistic": "Sum",
+          "period": "60",
+          "alias": "GET"
+        },
+        {
+          "refId": "B",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/ElastiCache",
+          "metricName": "SetTypeCmds",
+          "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
+          "statistic": "Sum",
+          "period": "60",
+          "alias": "SET"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }
+      }
+    }
+
+  ]
+}
