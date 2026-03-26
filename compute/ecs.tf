@@ -389,6 +389,8 @@ resource "aws_iam_policy" "ecs_observability" {
         Effect = "Allow"
         Action = [
           "cloudwatch:PutMetricData",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
           "logs:PutLogEvents",
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams"
