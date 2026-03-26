@@ -80,7 +80,11 @@ data "aws_secretsmanager_secret_version" "chatbot_cluster" {
 locals {
   vpc_id                = data.aws_vpc.main.id
   private_db_subnet_ids = data.aws_subnets.private_db.ids
-  rds_sg_id             = data.aws_security_group.rds.id
+
+  rds_users_sg_id    = data.aws_security_group.rds.id
+  rds_analysis_sg_id = data.aws_security_group.rds.id
+  rds_history_sg_id  = data.aws_security_group.rds.id
+  rds_chatbot_sg_id  = data.aws_security_group.rds.id
 
   users_secret    = jsondecode(data.aws_secretsmanager_secret_version.users_cluster.secret_string)
   analysis_secret = jsondecode(data.aws_secretsmanager_secret_version.analysis_cluster.secret_string)

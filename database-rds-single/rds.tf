@@ -3,6 +3,17 @@ resource "aws_db_parameter_group" "postgres" {
   name_prefix = "${var.project_name}-${var.environment}-postgres15-"
   family      = "postgres15"
 
+  parameter {
+    name         = "rds.logical_replication"
+    value        = "1"
+    apply_method = "pending-reboot"
+  }
+
+  parameter {
+    name  = "shared_preload_libraries"
+    value = "pg_stat_statements"
+  }
+
   lifecycle {
     create_before_destroy = true
   }

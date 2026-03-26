@@ -112,13 +112,13 @@ resource "aws_security_group" "dms" {
   }
 }
 
-# RDS SG에 DMS SG → 5432 인바운드 허용 규칙 추가
+# RDS SG에 DMS SG → 5432 인바운드 허용 규칙 추가 (공통 SG 하나)
 resource "aws_security_group_rule" "rds_allow_dms" {
   type                     = "ingress"
   from_port                = 5432
   to_port                  = 5432
   protocol                 = "tcp"
-  security_group_id        = local.rds_sg_id
+  security_group_id        = local.rds_users_sg_id
   source_security_group_id = aws_security_group.dms.id
   description              = "DMS Replication Instance to RDS"
 }
@@ -174,7 +174,7 @@ resource "aws_dms_replication_instance" "main" {
 resource "aws_dms_endpoint" "source_users" {
   endpoint_id   = "${local.name_prefix}-src-users"
   endpoint_type = "source"
-  engine_name   = "aurora-postgresql"
+  engine_name   = var.use_aurora ? "aurora-postgresql" : "postgres"
 
   server_name   = local.users_secret["host"]
   port          = local.users_secret["port"]
@@ -200,7 +200,7 @@ resource "aws_dms_endpoint" "source_users" {
 resource "aws_dms_endpoint" "target_analysis" {
   endpoint_id   = "${local.name_prefix}-tgt-analysis"
   endpoint_type = "target"
-  engine_name   = "aurora-postgresql"
+  engine_name   = var.use_aurora ? "aurora-postgresql" : "postgres"
 
   server_name   = local.analysis_secret["host"]
   port          = local.analysis_secret["port"]
@@ -228,6 +228,7 @@ resource "aws_dms_replication_task" "user_to_analysis" {
   source_endpoint_arn      = aws_dms_endpoint.source_users.endpoint_arn
   target_endpoint_arn      = aws_dms_endpoint.target_analysis.endpoint_arn
   migration_type           = var.migration_type
+  start_replication_task   = true
 
   replication_task_settings = jsonencode({
     TargetMetadata = {
@@ -237,7 +238,7 @@ resource "aws_dms_replication_task" "user_to_analysis" {
       LobMaxSize         = 32768
     }
     FullLoadSettings = {
-      TargetTablePrepMode             = "DO_NOTHING"
+      TargetTablePrepMode             = "DROP_AND_CREATE"
       CreatePkAfterFullLoad           = false
       StopTaskCachedChangesApplied    = false
       StopTaskCachedChangesNotApplied = false
@@ -248,9 +249,14 @@ resource "aws_dms_replication_task" "user_to_analysis" {
     Logging = {
       EnableLogging = true
       LogComponents = [
-        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "SOURCE_CAPTURE", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_APPLY", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TABLES_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "METADATA_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "COMMON", Severity = "LOGGER_SEVERITY_DEFAULT" },
       ]
     }
   })
@@ -669,7 +675,7 @@ resource "aws_dms_replication_task" "user_to_analysis" {
 resource "aws_dms_endpoint" "target_history" {
   endpoint_id   = "${local.name_prefix}-tgt-history"
   endpoint_type = "target"
-  engine_name   = "aurora-postgresql"
+  engine_name   = var.use_aurora ? "aurora-postgresql" : "postgres"
 
   server_name   = local.history_secret["host"]
   port          = local.history_secret["port"]
@@ -695,6 +701,7 @@ resource "aws_dms_replication_task" "users_to_history" {
   source_endpoint_arn      = aws_dms_endpoint.source_users.endpoint_arn
   target_endpoint_arn      = aws_dms_endpoint.target_history.endpoint_arn
   migration_type           = var.migration_type
+  start_replication_task   = true
 
   replication_task_settings = jsonencode({
     TargetMetadata = {
@@ -704,7 +711,7 @@ resource "aws_dms_replication_task" "users_to_history" {
       LobMaxSize         = 32768
     }
     FullLoadSettings = {
-      TargetTablePrepMode             = "DO_NOTHING"
+      TargetTablePrepMode             = "DROP_AND_CREATE"
       CreatePkAfterFullLoad           = false
       StopTaskCachedChangesApplied    = false
       StopTaskCachedChangesNotApplied = false
@@ -715,9 +722,14 @@ resource "aws_dms_replication_task" "users_to_history" {
     Logging = {
       EnableLogging = true
       LogComponents = [
-        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "SOURCE_CAPTURE", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_APPLY", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TABLES_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "METADATA_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "COMMON", Severity = "LOGGER_SEVERITY_DEFAULT" },
       ]
     }
   })
@@ -899,6 +911,7 @@ resource "aws_dms_replication_task" "user_condition_to_analysis" {
   source_endpoint_arn      = aws_dms_endpoint.source_users.endpoint_arn
   target_endpoint_arn      = aws_dms_endpoint.target_analysis.endpoint_arn
   migration_type           = var.migration_type
+  start_replication_task   = true
 
   replication_task_settings = jsonencode({
     TargetMetadata = {
@@ -908,7 +921,7 @@ resource "aws_dms_replication_task" "user_condition_to_analysis" {
       LobMaxSize         = 32768
     }
     FullLoadSettings = {
-      TargetTablePrepMode             = "DO_NOTHING"
+      TargetTablePrepMode             = "DROP_AND_CREATE"
       CreatePkAfterFullLoad           = false
       StopTaskCachedChangesApplied    = false
       StopTaskCachedChangesNotApplied = false
@@ -919,9 +932,14 @@ resource "aws_dms_replication_task" "user_condition_to_analysis" {
     Logging = {
       EnableLogging = true
       LogComponents = [
-        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "SOURCE_CAPTURE", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_APPLY", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TABLES_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "METADATA_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "COMMON", Severity = "LOGGER_SEVERITY_DEFAULT" },
       ]
     }
   })
@@ -978,7 +996,7 @@ resource "aws_dms_replication_task" "user_condition_to_analysis" {
 resource "aws_dms_endpoint" "target_chatbot" {
   endpoint_id   = "${local.name_prefix}-tgt-chatbot"
   endpoint_type = "target"
-  engine_name   = "aurora-postgresql"
+  engine_name   = var.use_aurora ? "aurora-postgresql" : "postgres"
 
   server_name   = local.chatbot_secret["host"]
   port          = local.chatbot_secret["port"]
@@ -1007,6 +1025,7 @@ resource "aws_dms_replication_task" "users_to_chatbot" {
   source_endpoint_arn      = aws_dms_endpoint.source_users.endpoint_arn
   target_endpoint_arn      = aws_dms_endpoint.target_chatbot.endpoint_arn
   migration_type           = var.migration_type
+  start_replication_task   = true
 
   replication_task_settings = jsonencode({
     TargetMetadata = {
@@ -1016,7 +1035,7 @@ resource "aws_dms_replication_task" "users_to_chatbot" {
       LobMaxSize         = 32768
     }
     FullLoadSettings = {
-      TargetTablePrepMode             = "DO_NOTHING"
+      TargetTablePrepMode             = "DROP_AND_CREATE"
       CreatePkAfterFullLoad           = false
       StopTaskCachedChangesApplied    = false
       StopTaskCachedChangesNotApplied = false
@@ -1027,9 +1046,14 @@ resource "aws_dms_replication_task" "users_to_chatbot" {
     Logging = {
       EnableLogging = true
       LogComponents = [
-        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "SOURCE_CAPTURE", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_APPLY", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TABLES_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "METADATA_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "COMMON", Severity = "LOGGER_SEVERITY_DEFAULT" },
       ]
     }
   })
@@ -1424,7 +1448,7 @@ resource "aws_dms_replication_task" "users_to_chatbot" {
 resource "aws_dms_endpoint" "source_analysis" {
   endpoint_id   = "${local.name_prefix}-src-analysis"
   endpoint_type = "source"
-  engine_name   = "aurora-postgresql"
+  engine_name   = var.use_aurora ? "aurora-postgresql" : "postgres"
 
   server_name   = local.analysis_secret["host"]
   port          = local.analysis_secret["port"]
@@ -1457,6 +1481,7 @@ resource "aws_dms_replication_task" "analysis_to_chatbot" {
   source_endpoint_arn      = aws_dms_endpoint.source_analysis.endpoint_arn
   target_endpoint_arn      = aws_dms_endpoint.target_chatbot.endpoint_arn
   migration_type           = var.migration_type
+  start_replication_task   = true
 
   replication_task_settings = jsonencode({
     TargetMetadata = {
@@ -1466,7 +1491,7 @@ resource "aws_dms_replication_task" "analysis_to_chatbot" {
       LobMaxSize         = 32768
     }
     FullLoadSettings = {
-      TargetTablePrepMode             = "DO_NOTHING"
+      TargetTablePrepMode             = "DROP_AND_CREATE"
       CreatePkAfterFullLoad           = false
       StopTaskCachedChangesApplied    = false
       StopTaskCachedChangesNotApplied = false
@@ -1477,9 +1502,14 @@ resource "aws_dms_replication_task" "analysis_to_chatbot" {
     Logging = {
       EnableLogging = true
       LogComponents = [
-        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DEFAULT" },
-        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "SOURCE_UNLOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "SOURCE_CAPTURE", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_LOAD", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TARGET_APPLY", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TASK_MANAGER", Severity = "LOGGER_SEVERITY_DETAILED_DEBUG" },
+        { Id = "TABLES_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "METADATA_MANAGER", Severity = "LOGGER_SEVERITY_DEFAULT" },
+        { Id = "COMMON", Severity = "LOGGER_SEVERITY_DEFAULT" },
       ]
     }
   })
@@ -1630,15 +1660,14 @@ resource "aws_dms_replication_task" "analysis_to_chatbot" {
       {
         rule-type   = "transformation"
         rule-id     = "206"
-        rule-name   = "rename-nutrient-id"
-        rule-action = "rename"
+        rule-name   = "remove-nutrient-id"
+        rule-action = "remove-column"
         rule-target = "column"
         object-locator = {
           schema-name = "public"
           table-name  = "nutrient_gap"
           column-name = "nutrient_id"
         }
-        value = "chat_nutrient_id"
       },
       {
         rule-type   = "transformation"
@@ -1652,6 +1681,18 @@ resource "aws_dms_replication_task" "analysis_to_chatbot" {
           column-name = "unit"
         }
         value = "chat_unit"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "208"
+        rule-name   = "remove-ng-cognito-id"
+        rule-action = "remove-column"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "nutrient_gap"
+          column-name = "cognito_id"
+        }
       },
 
       # ── recommendations → chatbot_recommendations ────────────────
@@ -1684,15 +1725,38 @@ resource "aws_dms_replication_task" "analysis_to_chatbot" {
       {
         rule-type   = "transformation"
         rule-id     = "303"
-        rule-name   = "rename-rec-result-id"
-        rule-action = "rename"
+        rule-name   = "remove-rec-result-id"
+        rule-action = "remove-column"
         rule-target = "column"
         object-locator = {
           schema-name = "public"
           table-name  = "recommendations"
           column-name = "result_id"
         }
-        value = "chat_result_id"
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "306"
+        rule-name   = "remove-rec-product-id"
+        rule-action = "remove-column"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "recommendations"
+          column-name = "product_id"
+        }
+      },
+      {
+        rule-type   = "transformation"
+        rule-id     = "307"
+        rule-name   = "remove-rec-cognito-id"
+        rule-action = "remove-column"
+        rule-target = "column"
+        object-locator = {
+          schema-name = "public"
+          table-name  = "recommendations"
+          column-name = "cognito_id"
+        }
       },
       {
         rule-type   = "transformation"

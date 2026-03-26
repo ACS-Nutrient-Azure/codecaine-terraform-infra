@@ -481,14 +481,6 @@ resource "aws_ecs_task_definition" "services" {
         # chatbot 전용 환경변수
         each.key == "chatbot" ? [
           {
-            name  = "DYNAMODB_TABLE_NAME"
-            value = "ChatbotData"
-          },
-          {
-            name  = "DYNAMODB_ENDPOINT_URL"
-            value = "http://13.125.230.157:8000"
-          },
-          {
             name  = "S3_BUCKET_NAME"
             value = "${var.project_name}-${var.environment}-chatbot-json"
           },
@@ -570,7 +562,7 @@ resource "aws_ecs_task_definition" "services" {
 
       # DB 정보는 history, users, analysis에만 주입
       # Secrets Manager valueFrom: data source로 실제 ARN 조회 후 JSON key 추출
-      secrets = contains(["users", "history", "analysis"], each.key) ? [
+      secrets = contains(["users", "history", "analysis", "chatbot"], each.key) ? [
         {
           name      = "DB_PASSWORD"
           valueFrom = "${data.aws_secretsmanager_secret.cluster[each.key].arn}:password::"
@@ -695,7 +687,7 @@ data "aws_caller_identity" "current" {}
 
 # 각 서비스별 Secrets Manager 시크릿 ARN 조회 (랜덤 suffix 포함한 실제 ARN 획득)
 data "aws_secretsmanager_secret" "cluster" {
-  for_each = toset(["users", "history", "analysis"])
+  for_each = toset(["users", "history", "analysis", "chatbot"])
   name     = "${var.project_name}-${var.environment}-${each.key}-cluster-secret"
 }
 

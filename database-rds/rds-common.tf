@@ -23,6 +23,12 @@ resource "aws_rds_cluster_parameter_group" "aurora" {
     value = "pg_stat_statements"
   }
 
+  parameter {
+    name         = "rds.logical_replication"
+    value        = "1"
+    apply_method = "pending-reboot"
+  }
+
   lifecycle {
     create_before_destroy = true
   }
