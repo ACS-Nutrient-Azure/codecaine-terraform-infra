@@ -91,6 +91,25 @@ resource "aws_iam_role_policy" "agentcore_logs" {
   })
 }
 
+resource "aws_iam_role_policy" "agentcore_cloudwatch_metrics" {
+  name = "cloudwatch-metrics"
+  role = aws_iam_role.agentcore_runtime.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "cloudwatch:PutMetricData"
+      Resource = "*"
+      Condition = {
+        StringEquals = {
+          "cloudwatch:namespace" = "CDCI/AgentCore"
+        }
+      }
+    }]
+  })
+}
+
 resource "aws_iam_role_policy" "agentcore_lambda" {
   name = "invoke-lambda"
   role = aws_iam_role.agentcore_runtime.id
