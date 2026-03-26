@@ -1,0 +1,76 @@
+{
+  "title": "X-Ray Traces",
+  "description": "분산 트레이싱 - 트레이스 분석 및 에러 추적",
+  "tags": ["xray", "traces", "cdci"],
+  "timezone": "Asia/Seoul",
+  "refresh": "1m",
+  "time": { "from": "now-3h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "최근 트레이스 전체",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 10 },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "getTraceSummaries",
+          "region": "default",
+          "filter": ""
+        }
+      ],
+      "options": {
+        "sortBy": [{ "displayName": "Duration", "desc": true }]
+      },
+      "fieldConfig": {
+        "defaults": { "custom": { "filterable": true } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "에러 / 결함 트레이스 (4xx / 5xx)",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 10 },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "getTraceSummaries",
+          "region": "default",
+          "filter": "error OR fault"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "filterable": true } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "HasError" },
+            "properties": [{ "id": "custom.displayMode", "value": "color-background" }]
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "title": "느린 트레이스 (> 0.5s)",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 10 },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "getTraceSummaries",
+          "region": "default",
+          "filter": "responsetime > 0.5"
+        }
+      ],
+      "options": {
+        "sortBy": [{ "displayName": "Duration", "desc": true }]
+      },
+      "fieldConfig": {
+        "defaults": { "custom": { "filterable": true } }
+      }
+    }
+  ]
+}

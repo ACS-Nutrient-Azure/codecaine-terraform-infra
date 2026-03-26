@@ -12,3 +12,11 @@ resource "grafana_dashboard" "service_health" {
   folder      = grafana_folder.cdci.id
   config_json = file("${path.module}/dashboards/service-health.json")
 }
+
+# ============================================================
+# Dashboard: X-Ray Traces
+# ============================================================
+resource "grafana_dashboard" "xray_traces" {
+  folder      = grafana_folder.cdci.id
+  config_json = file("${path.module}/dashboards/xray-traces.json")
+}
