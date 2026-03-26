@@ -2,7 +2,7 @@
 
 ECS Fargate 기반 웹서비스 + AWS Bedrock AgentCore 인프라 (Terraform)
 
-> **최신 업데이트**: Observability 파이프라인 구축 (ADOT + X-Ray + CloudWatch + Grafana)
+> **최신 업데이트**: AgentCore Runtime 에이전트 메트릭 연동 (boto3 → CloudWatch → Grafana)
 > **팀**: CodeCaine (CDCI)
 
 ## 아키텍처
@@ -50,16 +50,22 @@ ECS Fargate Task
     ├── Traces  → AWS X-Ray
     └── Metrics → CloudWatch EMF
 
+AgentCore Runtime
+└── Agent Container
+    └── boto3 → CloudWatch (CDCI/AgentCore)
+
 CloudWatch
 ├── AWS/ECS                  (CPU, Memory - 서비스별)
 ├── AWS/ApplicationELB       (RequestCount, TargetResponseTime, 4xx/5xx)
-└── ECS/ContainerInsights    (RunningTaskCount)
+├── ECS/ContainerInsights    (RunningTaskCount)
+└── CDCI/AgentCore           (agent_invocation, latency, token, tool 메트릭)
 
 AWS Managed Grafana (g-39fdcca4d2)
 └── CDCI PRD 폴더
     ├── ✅ Service Health     (ECS + ALB 모니터링)
+    ├── ✅ Business Overview  (에이전트 호출 / 토큰 / Tool 지표)
     ├── 🔜 X-Ray Traces       (분산 트레이싱)
-    └── 🔜 Business Overview  (API 트렌드 / 에러율)
+    └── 🔜 CloudWatch Alarms  (임계값 알림)
 ```
 
 | Phase | 내용 | 상태 |
@@ -67,9 +73,10 @@ AWS Managed Grafana (g-39fdcca4d2)
 | Phase 1 | ADOT 사이드카 + IAM 권한 + Container Insights | ✅ 완료 |
 | Phase 2 | AWS Managed Grafana 워크스페이스 + SSO | ✅ 완료 |
 | Phase 3 | Service Health 대시보드 (ECS + ALB) | ✅ 완료 |
-| Phase 4 | X-Ray Traces 대시보드 | 🔜 진행 예정 |
-| Phase 5 | Business Overview 대시보드 | 🔜 진행 예정 |
-| Phase 6 | CloudWatch Alarms | 🔜 미정 |
+| Phase 4 | AgentCore 에이전트 메트릭 계측 (boto3 → CloudWatch) | ✅ 완료 |
+| Phase 5 | Business Overview 대시보드 (에이전트 지표 시각화) | ✅ 완료 |
+| Phase 6 | X-Ray Traces 대시보드 | 🔜 진행 예정 |
+| Phase 7 | CloudWatch Alarms | 🔜 미정 |
 
 Grafana URL: `https://g-39fdcca4d2.grafana-workspace.ap-northeast-2.amazonaws.com`
 
