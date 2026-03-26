@@ -425,7 +425,7 @@
           "metricQueryType": 1,
           "metricEditorMode": 1,
           "region": "default",
-          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE "result" = 'approved' GROUP BY tool_name"
+          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE \"result\" = 'approved' GROUP BY tool_name"
         }
       ],
       "options": {
@@ -458,7 +458,7 @@
           "metricQueryType": 1,
           "metricEditorMode": 1,
           "region": "default",
-          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE "result" = 'rejected' GROUP BY tool_name"
+          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE \"result\" = 'rejected' GROUP BY tool_name"
         }
       ],
       "options": {
