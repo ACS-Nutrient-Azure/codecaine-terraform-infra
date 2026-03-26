@@ -51,11 +51,11 @@
 
     {
       "id": 2,
-      "title": "에이전트별 에러율 (%)",
+      "title": "에이전트별 에러 횟수 (24h)",
       "type": "bargauge",
       "gridPos": { "x": 8, "y": 1, "w": 8, "h": 6 },
       "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
-      "description": "custom metric: CDCI/AgentCore > agent_invocation_total (dimension: agent_name, status=error / status=success)",
+      "description": "custom metric: CDCI/AgentCore > agent_invocation_total WHERE status=error GROUP BY agent_name",
       "targets": [
         {
           "refId": "A",
@@ -63,42 +63,23 @@
           "metricQueryType": 1,
           "metricEditorMode": 1,
           "region": "default",
-          "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" WHERE status = 'error' GROUP BY agent_name"
-        },
-        {
-          "refId": "B",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
-          "region": "default",
-          "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
-        },
-        {
-          "refId": "C",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 2,
-          "region": "default",
-          "expression": "IF(B > 0, (A / B) * 100, 0)",
-          "alias": "에러율"
+          "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" WHERE \"status\" = 'error' GROUP BY agent_name"
         }
       ],
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": { "calcs": ["sum"] },
         "orientation": "horizontal",
         "displayMode": "gradient"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
               { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 10 }
+              { "color": "red", "value": 20 }
             ]
           }
         }
@@ -444,7 +425,7 @@
           "metricQueryType": 1,
           "metricEditorMode": 1,
           "region": "default",
-          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE result = 'approved' GROUP BY tool_name"
+          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE "result" = 'approved' GROUP BY tool_name"
         }
       ],
       "options": {
@@ -477,7 +458,7 @@
           "metricQueryType": 1,
           "metricEditorMode": 1,
           "region": "default",
-          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE result = 'rejected' GROUP BY tool_name"
+          "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE "result" = 'rejected' GROUP BY tool_name"
         }
       ],
       "options": {
