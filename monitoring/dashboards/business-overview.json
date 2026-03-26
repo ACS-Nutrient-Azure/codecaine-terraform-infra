@@ -211,11 +211,11 @@
 
     {
       "id": 6,
-      "title": "모델별 토큰 사용량 추이",
+      "title": "모델별 입력 토큰 추이",
       "type": "timeseries",
-      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 6 },
+      "gridPos": { "x": 16, "y": 8, "w": 4, "h": 6 },
       "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
-      "description": "custom metric: CDCI/AgentCore > agent_token_input/output_total (dimension: model_id)",
+      "description": "custom metric: CDCI/AgentCore > agent_token_input_total GROUP BY agent_name, model_id",
       "targets": [
         {
           "refId": "A",
@@ -224,9 +224,30 @@
           "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_token_input_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name, model_id"
-        },
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 16,
+      "title": "모델별 출력 토큰 추이",
+      "type": "timeseries",
+      "gridPos": { "x": 20, "y": 8, "w": 4, "h": 6 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "custom metric: CDCI/AgentCore > agent_token_output_total GROUP BY agent_name, model_id",
+      "targets": [
         {
-          "refId": "B",
+          "refId": "A",
           "queryMode": "Metrics",
           "metricQueryType": 1,
           "metricEditorMode": 1,
@@ -238,17 +259,7 @@
         "defaults": {
           "unit": "short",
           "custom": { "lineWidth": 2 }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byFrameRefID", "options": "A" },
-            "properties": [{ "id": "displayName", "value": "입력 (${__field.labels.model_id})" }]
-          },
-          {
-            "matcher": { "id": "byFrameRefID", "options": "B" },
-            "properties": [{ "id": "displayName", "value": "출력 (${__field.labels.model_id})" }]
-          }
-        ]
+        }
       },
       "options": {
         "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
