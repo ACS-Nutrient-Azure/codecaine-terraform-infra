@@ -223,7 +223,7 @@
           "metricQueryType": 1,
           "metricEditorMode": 1,
           "region": "default",
-          "sqlExpression": "SELECT SUM(agent_token_input_total) FROM \"CDCI/AgentCore\" GROUP BY model_id"
+          "sqlExpression": "SELECT SUM(agent_token_input_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name, model_id"
         },
         {
           "refId": "B",
@@ -231,7 +231,7 @@
           "metricQueryType": 1,
           "metricEditorMode": 1,
           "region": "default",
-          "sqlExpression": "SELECT SUM(agent_token_output_total) FROM \"CDCI/AgentCore\" GROUP BY model_id"
+          "sqlExpression": "SELECT SUM(agent_token_output_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name, model_id"
         }
       ],
       "fieldConfig": {
