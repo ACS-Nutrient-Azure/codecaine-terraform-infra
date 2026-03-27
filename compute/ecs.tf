@@ -463,24 +463,22 @@ resource "aws_ecs_task_definition" "services" {
           {
             name  = "ALLOWED_ORIGINS"
             value = "https://${var.subdomain_prefix}.${var.domain_name}"
-          },
-          {
-            name  = "USER_SERVICE_URL"
-            value = "http://users.${var.project_name}-${var.environment}.internal:8000"
-          },
+          }
+        ],
+        # chatbot 서비스에만 ANALYSIS_SERVICE_URL 주입
+        contains(["chatbot"], each.key) ? [
           {
             name  = "ANALYSIS_SERVICE_URL"
             value = "http://analysis.${var.project_name}-${var.environment}.internal:8000"
-          },
-          {
-            name  = "CHATBOT_SERVICE_URL"
-            value = "http://chatbot.${var.project_name}-${var.environment}.internal:8000"
-          },
-          {
-            name  = "HISTORY_SERVICE_URL"
-            value = "http://history.${var.project_name}-${var.environment}.internal:8000"
           }
-        ],
+        ] : [],
+        # analysis 서비스에만 USER_SERVICE_URL 주입
+        each.key == "analysis" ? [
+          {
+            name  = "USER_SERVICE_URL"
+            value = "http://users.${var.project_name}-${var.environment}.internal:8000"
+          }
+        ] : [],
         # backend 서비스에만 Cognito JWT 검증용 환경변수 주입 (frontend는 빌드타임에 CI/CD에서 처리)
         each.key != "frontend" ? [
           {
@@ -673,8 +671,11 @@ resource "aws_ecs_service" "services" {
     container_port   = each.value.container_port
   }
 
-  service_registries {
-    registry_arn = aws_service_discovery_service.services[each.key].arn
+  dynamic "service_registries" {
+    for_each = contains(["users", "analysis"], each.key) ? [1] : []
+    content {
+      registry_arn = aws_service_discovery_service.services[each.key].arn
+    }
   }
 
   deployment_maximum_percent         = 200
@@ -728,7 +729,7 @@ resource "aws_service_discovery_private_dns_namespace" "internal" {
 }
 
 resource "aws_service_discovery_service" "services" {
-  for_each = local.services
+  for_each = { for k, v in local.services : k => v if contains(["users", "analysis"], k) }
 
   name = each.value.name
 
