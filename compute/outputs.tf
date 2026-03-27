@@ -112,3 +112,16 @@ output "redis_port" {
   description = "ElastiCache Redis port"
   value       = aws_elasticache_cluster.chatbot.port
 }
+
+# DR Failover 모듈에서 참조하는 outputs
+output "alb_arn_suffix" {
+  description = "ALB ARN suffix for CloudWatch metrics"
+  value       = aws_lb.main.arn_suffix
+}
+
+output "target_group_arn_suffixes" {
+  description = "Target Group ARN suffixes for CloudWatch metrics"
+  value = {
+    for k, v in aws_lb_target_group.services : k => v.arn_suffix
+  }
+}

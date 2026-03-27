@@ -1,0 +1,10 @@
+output "vpc_id" { value = aws_vpc.dr.id }
+output "public_subnet_ids" { value = aws_subnet.public[*].id }
+output "private_app_subnet_ids" { value = aws_subnet.private_app[*].id }
+output "private_db_subnet_ids" { value = aws_subnet.private_db[*].id }
+output "db_subnet_group_name" { value = aws_db_subnet_group.dr.name }
+output "alb_security_group_id" { value = aws_security_group.alb.id }
+output "ecs_tasks_security_group_id" { value = aws_security_group.ecs_tasks.id }
+output "rds_security_group_id" { value = aws_security_group.rds.id }
+output "redis_security_group_id" { value = aws_security_group.redis.id }
+output "private_app_route_table_id" { value = aws_route_table.private_app.id }

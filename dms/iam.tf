@@ -85,3 +85,26 @@ resource "aws_iam_role_policy" "dms_task_secrets" {
     }]
   })
 }
+
+# DMS Full Load S3 임시 버퍼 접근 권한
+resource "aws_iam_role_policy" "dms_task_s3" {
+  name = "${local.name_prefix}-dms-task-s3-policy"
+  role = aws_iam_role.dms_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

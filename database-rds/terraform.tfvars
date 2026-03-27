@@ -6,7 +6,7 @@ postgres_port = 5432
 
 # Aurora PostgreSQL (3개 클러스터 - 각각 다른 역할)
 aurora_postgres_version = "15.8"
-enable_global_database  = false # Global Database 활성화 시 true
+enable_global_database  = true # DR을 위한 Aurora Global Database 활성화
 
 aurora_clusters = {
   cluster1 = {

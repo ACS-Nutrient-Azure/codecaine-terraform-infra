@@ -52,6 +52,8 @@ resource "aws_db_instance" "users" {
   performance_insights_enabled = false
   monitoring_interval          = 0
 
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-USERS-RDS"
   }
@@ -85,6 +87,8 @@ resource "aws_db_instance" "history" {
 
   performance_insights_enabled = false
   monitoring_interval          = 0
+
+  enabled_cloudwatch_logs_exports = ["postgresql"]
 
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-HISTORY-RDS"
@@ -121,6 +125,8 @@ resource "aws_db_instance" "analysis" {
   performance_insights_enabled = false
   monitoring_interval          = 0
 
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-ANALYSIS-RDS"
   }
@@ -154,6 +160,8 @@ resource "aws_db_instance" "chatbot" {
 
   performance_insights_enabled = false
   monitoring_interval          = 0
+
+  enabled_cloudwatch_logs_exports = ["postgresql"]
 
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-RDS"
