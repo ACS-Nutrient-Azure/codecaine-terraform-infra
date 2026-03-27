@@ -20,3 +20,11 @@ resource "grafana_dashboard" "xray_traces" {
   folder      = grafana_folder.cdci.id
   config_json = file("${path.module}/dashboards/xray-traces.json")
 }
+
+# ============================================================
+# Dashboard: Business Overview
+# ============================================================
+resource "grafana_dashboard" "business_overview" {
+  folder      = grafana_folder.cdci.id
+  config_json = file("${path.module}/dashboards/business-overview.json")
+}
