@@ -463,6 +463,22 @@ resource "aws_ecs_task_definition" "services" {
           {
             name  = "ALLOWED_ORIGINS"
             value = "https://${var.subdomain_prefix}.${var.domain_name}"
+          },
+          {
+            name  = "USER_SERVICE_URL"
+            value = "http://users.${var.project_name}-${var.environment}.internal:8000"
+          },
+          {
+            name  = "ANALYSIS_SERVICE_URL"
+            value = "http://analysis.${var.project_name}-${var.environment}.internal:8000"
+          },
+          {
+            name  = "CHATBOT_SERVICE_URL"
+            value = "http://chatbot.${var.project_name}-${var.environment}.internal:8000"
+          },
+          {
+            name  = "HISTORY_SERVICE_URL"
+            value = "http://history.${var.project_name}-${var.environment}.internal:8000"
           }
         ],
         # backend 서비스에만 Cognito JWT 검증용 환경변수 주입 (frontend는 빌드타임에 CI/CD에서 처리)
@@ -657,6 +673,10 @@ resource "aws_ecs_service" "services" {
     container_port   = each.value.container_port
   }
 
+  service_registries {
+    registry_arn = aws_service_discovery_service.services[each.key].arn
+  }
+
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 100
 
@@ -692,6 +712,45 @@ data "aws_secretsmanager_secret" "cluster" {
   for_each = toset(["users", "history", "analysis", "chatbot"])
   name     = "${var.project_name}-${var.environment}-${each.key}-cluster-secret"
 }
+
+# =============================================================================
+# AWS Cloud Map — ECS 서비스 간 VPC 내부 통신용 Private DNS
+# Analysis Backend → User 서비스 내부 호출: http://users.{project}-{env}.internal:8000
+# =============================================================================
+
+resource "aws_service_discovery_private_dns_namespace" "internal" {
+  name = "${var.project_name}-${var.environment}.internal"
+  vpc  = local.vpc_id
+
+  tags = {
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-INTERNAL-NAMESPACE"
+  }
+}
+
+resource "aws_service_discovery_service" "services" {
+  for_each = local.services
+
+  name = each.value.name
+
+  dns_config {
+    namespace_id   = aws_service_discovery_private_dns_namespace.internal.id
+    routing_policy = "MULTIVALUE"
+    dns_records {
+      type = "A"
+      ttl  = 10
+    }
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+
+  tags = {
+    Name = "${upper(var.project_name)}-${upper(var.environment)}-${upper(each.value.name)}-SD"
+  }
+}
+
+# =============================================================================
 
 # 각 서비스별 ECR 최신 이미지 태그 동적 조회 (업로드 시간 기준)
 data "aws_ecr_image" "latest" {
