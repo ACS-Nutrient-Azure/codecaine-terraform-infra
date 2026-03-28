@@ -52,3 +52,8 @@ output "cognito_identity_pool_id" {
   description = "Cognito Identity Pool ID"
   value       = var.enable_cognito ? aws_cognito_identity_pool.main[0].id : ""
 }
+
+output "ses_domain_identity_arn" {
+  description = "SES 도메인 인증 ARN"
+  value       = aws_ses_domain_identity.main.arn
+}
