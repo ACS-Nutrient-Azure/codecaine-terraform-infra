@@ -156,4 +156,31 @@ resource "aws_cloudwatch_composite_alarm" "dr_trigger" {
   alarm_description = "DR TRIGGER: 복합 레이어 장애 감지 → 도쿄 Failover 실행"
 
   alarm_actions = [aws_sns_topic.dr_alert.arn]
+  ok_actions    = [aws_sns_topic.dr_alert.arn]
+}
+
+# ── EventBridge: DR Composite Alarm OK 전환 → Failback 트리거 ─────
+# DR-TRIGGER Alarm이 ALARM → OK로 전환될 때 dr-failback-orchestrator 실행
+# (서울 리전 장애 해소 감지)
+
+resource "aws_cloudwatch_event_rule" "dr_failback_trigger" {
+  name        = "${var.project_name}-${var.environment}-dr-failback-trigger"
+  description = "DR Composite Alarm OK 전환 → Failback Step Functions 실행"
+
+  event_pattern = jsonencode({
+    source      = ["aws.cloudwatch"]
+    detail-type = ["CloudWatch Alarm State Change"]
+    detail = {
+      alarmName     = ["${var.project_name}-${var.environment}-DR-TRIGGER"]
+      state         = { value = ["OK"] }
+      previousState = { value = ["ALARM"] }
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "dr_failback_step_functions" {
+  rule      = aws_cloudwatch_event_rule.dr_failback_trigger.name
+  target_id = "dr-failback-step-functions"
+  arn       = aws_sfn_state_machine.dr_failback_orchestrator.arn
+  role_arn  = aws_iam_role.eventbridge_sfn.arn
 }
