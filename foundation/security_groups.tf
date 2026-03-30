@@ -48,21 +48,6 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# VPC Endpoints Security Group
-resource "aws_security_group" "vpc_endpoints" {
-  name_prefix = lower("${var.project_name}-${var.environment}-vpce-")
-  description = "Security group for VPC endpoints"
-  vpc_id      = aws_vpc.main.id
-
-  tags = {
-    Name = "${upper(var.project_name)}-${upper(var.environment)}-VPCE-SG"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
 # Redis (ElastiCache) Security Group
 resource "aws_security_group" "redis" {
   name_prefix = lower("${var.project_name}-${var.environment}-redis-")
@@ -192,21 +177,6 @@ resource "aws_security_group_rule" "rds_ingress_from_ecs" {
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.ecs_tasks.id
   security_group_id        = aws_security_group.rds.id
-}
-
-# =============================================================================
-# VPC Endpoints Rules
-# VPC Endpoint는 AWS 내부 서비스 - egress 규칙 불필요
-# =============================================================================
-
-resource "aws_security_group_rule" "vpce_ingress_from_ecs" {
-  type                     = "ingress"
-  description              = "HTTPS from ECS tasks"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.ecs_tasks.id
-  security_group_id        = aws_security_group.vpc_endpoints.id
 }
 
 # =============================================================================

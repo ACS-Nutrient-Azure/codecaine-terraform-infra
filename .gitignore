@@ -38,6 +38,7 @@ Thumbs.db
 
 *.zip
 *.sql
+*.xml
 
 # lambda package
 reminder/reminder/package

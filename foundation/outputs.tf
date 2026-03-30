@@ -43,11 +43,6 @@ output "rds_security_group_id" {
   value       = aws_security_group.rds.id
 }
 
-output "vpc_endpoints_security_group_id" {
-  description = "VPC endpoints security group ID"
-  value       = aws_security_group.vpc_endpoints.id
-}
-
 output "private_app_route_table_id" {
   description = "Private app route table ID for NAT Gateway route"
   value       = aws_route_table.private_app.id

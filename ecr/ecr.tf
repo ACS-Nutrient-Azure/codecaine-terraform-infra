@@ -32,25 +32,11 @@ resource "aws_ecr_lifecycle_policy" "services" {
     rules = [
       {
         rulePriority = 1
-        description  = "Keep last ${var.image_retention_count} tagged images"
+        description  = "Keep last ${var.image_retention_count} images (any tag)"
         selection = {
-          tagStatus     = "tagged"
-          tagPrefixList = ["v", "latest"]
-          countType     = "imageCountMoreThan"
-          countNumber   = var.image_retention_count
-        }
-        action = {
-          type = "expire"
-        }
-      },
-      {
-        rulePriority = 2
-        description  = "Remove untagged images after ${var.untagged_retention_days} days"
-        selection = {
-          tagStatus   = "untagged"
-          countType   = "sinceImagePushed"
-          countUnit   = "days"
-          countNumber = var.untagged_retention_days
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = var.image_retention_count
         }
         action = {
           type = "expire"
@@ -90,25 +76,11 @@ resource "aws_ecr_lifecycle_policy" "agents" {
     rules = [
       {
         rulePriority = 1
-        description  = "Keep last ${var.image_retention_count} tagged images"
+        description  = "Keep last ${var.image_retention_count} images (any tag)"
         selection = {
-          tagStatus     = "tagged"
-          tagPrefixList = ["v", "latest", "20"]
-          countType     = "imageCountMoreThan"
-          countNumber   = var.image_retention_count
-        }
-        action = {
-          type = "expire"
-        }
-      },
-      {
-        rulePriority = 2
-        description  = "Remove untagged images after ${var.untagged_retention_days} days"
-        selection = {
-          tagStatus   = "untagged"
-          countType   = "sinceImagePushed"
-          countUnit   = "days"
-          countNumber = var.untagged_retention_days
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = var.image_retention_count
         }
         action = {
           type = "expire"
