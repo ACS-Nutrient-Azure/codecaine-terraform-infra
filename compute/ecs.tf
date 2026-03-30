@@ -515,6 +515,26 @@ resource "aws_ecs_task_definition" "services" {
           {
             name  = "REDIS_PORT"
             value = tostring(aws_elasticache_cluster.chatbot.port)
+          },
+          {
+            name  = "REDIS_DB"
+            value = "0"
+          },
+          {
+            name  = "SUPERVISOR_AGENT_ARN"
+            value = data.terraform_remote_state.supervisor_agent.outputs.agentcore_runtime_arn
+          },
+          {
+            name  = "USER_SERVICE_URL"
+            value = "http://users.${var.project_name}-${var.environment}.internal:8000"
+          },
+          {
+            name  = "USE_MEMORY"
+            value = "true"
+          },
+          {
+            name  = "MEMORY_ID"
+            value = data.aws_ssm_parameter.agentcore_memory_id.value
           }
         ] : [],
         # history 전용 환경변수

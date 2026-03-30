@@ -78,7 +78,7 @@ data "aws_iam_openid_connect_provider" "github" {
 }
 
 resource "aws_iam_role" "github_actions" {
-  name = "${upper(var.project_name)}-${upper(var.environment)}-CHATBOT-AGENT-GITHUB-ACTIONS-ROLE"
+  name = "${upper(var.project_name)}-${upper(var.environment)}-QUESTION-AGENT-GITHUB-ACTIONS-ROLE"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

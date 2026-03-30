@@ -83,3 +83,19 @@ data "terraform_remote_state" "analysis_agent" {
     region = "ap-northeast-2"
   }
 }
+
+# AgentCore supervisor-agent 참조 (chatbot ECS 환경변수용)
+data "terraform_remote_state" "supervisor_agent" {
+  backend = "s3"
+
+  config = {
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "supervisor-agent-infra/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}
+
+# AgentCore Memory ID (SSM)
+data "aws_ssm_parameter" "agentcore_memory_id" {
+  name = "/${var.project_name}/${var.environment}/agentcore/memory-id"
+}
