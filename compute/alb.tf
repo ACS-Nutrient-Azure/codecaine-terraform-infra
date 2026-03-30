@@ -9,6 +9,7 @@ resource "aws_lb" "main" {
   enable_deletion_protection       = var.environment == "prd" ? true : false
   enable_http2                     = true
   enable_cross_zone_load_balancing = true
+  idle_timeout                     = 300
 
   # ALB 로그는 s3-buckets 모듈 배포 후 활성화
   access_logs {
