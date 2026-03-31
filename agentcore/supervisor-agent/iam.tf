@@ -85,9 +85,9 @@ resource "aws_iam_role_policy" "agentcore_invoke_subagents" {
         "bedrock-agentcore:InvokeAgentRuntimeWithResponseStream"
       ]
       Resource = [
-        data.terraform_remote_state.analysis_agent.outputs.agentcore_runtime_arn,
-        data.terraform_remote_state.chatbot_agent.outputs.agentcore_runtime_arn,
-        data.terraform_remote_state.summary_agent.outputs.agentcore_runtime_arn,
+        "${data.terraform_remote_state.analysis_agent.outputs.agentcore_runtime_arn}*",
+        "${data.terraform_remote_state.chatbot_agent.outputs.agentcore_runtime_arn}*",
+        "${data.terraform_remote_state.summary_agent.outputs.agentcore_runtime_arn}*",
       ]
     }]
   })
