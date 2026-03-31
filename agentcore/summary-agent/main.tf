@@ -48,3 +48,12 @@ data "terraform_remote_state" "provisioner" {
     region = "ap-northeast-2"
   }
 }
+
+data "terraform_remote_state" "compute" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-tfstate-620758375333-ap-northeast-2-an"
+    key    = "compute/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}

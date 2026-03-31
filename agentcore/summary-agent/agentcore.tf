@@ -14,6 +14,10 @@ resource "aws_lambda_invocation" "agentcore_runtime" {
     role_arn     = aws_iam_role.agentcore_runtime.arn
     ssm_key      = local.ssm_arn_key
     network_mode = var.agentcore_network_mode
+    network_mode_config = var.agentcore_network_mode == "VPC" ? {
+      subnet_ids         = data.terraform_remote_state.compute.outputs.private_app_subnet_ids
+      security_group_ids = [data.terraform_remote_state.compute.outputs.ecs_tasks_security_group_id]
+    } : null
     idle_timeout = var.agentcore_idle_timeout
     max_lifetime = var.agentcore_max_lifetime
     environment_variables = {

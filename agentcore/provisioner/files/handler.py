@@ -2,6 +2,54 @@ import boto3
 import os
 import json
 import time
+import urllib.request
+import urllib.error
+from botocore.auth import SigV4Auth
+from botocore.awsrequest import AWSRequest
+
+
+def _create_runtime_via_http(region, agent_name, image_uri, role_arn, network_mode, network_mode_config, environment_variables=None):
+    """
+    botocore가 networkModeConfig를 미지원하는 경우 직접 REST API 호출
+    PUT /runtimes/ (CreateAgentRuntime)
+    """
+    session = boto3.session.Session()
+    credentials = session.get_credentials().get_frozen_credentials()
+
+    url = f"https://bedrock-agentcore-control.{region}.amazonaws.com/runtimes/"
+
+    body = {
+        "agentRuntimeName": agent_name,
+        "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
+        "networkConfiguration": {"networkMode": network_mode},
+        "roleArn": role_arn,
+    }
+
+    if network_mode_config:
+        body["networkConfiguration"]["networkModeConfig"] = {
+            "subnets":        network_mode_config.get("subnet_ids", []),
+            "securityGroups": network_mode_config.get("security_group_ids", []),
+        }
+
+    if environment_variables:
+        body["environmentVariables"] = environment_variables
+
+    body_bytes = json.dumps(body).encode("utf-8")
+
+    request = AWSRequest(method="PUT", url=url, data=body_bytes, headers={
+        "Content-Type": "application/json",
+        "Accept":       "application/json",
+    })
+    SigV4Auth(credentials, "bedrock-agentcore", region).add_auth(request)
+
+    req = urllib.request.Request(
+        url,
+        data=body_bytes,
+        headers=dict(request.headers),
+        method="PUT",
+    )
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read().decode("utf-8"))
 
 
 def lambda_handler(event, context):
@@ -69,6 +117,8 @@ def lambda_handler(event, context):
         ssm.put_parameter(Name=ssm_key, Value="pending", Type="String", Overwrite=True)
         return {"runtime_arn": None, "ssm_key": ssm_key, "skipped": True}
 
+    network_mode_config = event.get("network_mode_config")  # VPC 모드 시 subnet/sg 정보
+
     # 기존 runtime 조회
     paginator = agentcore.get_paginator("list_agent_runtimes")
     existing_id = None
@@ -81,36 +131,73 @@ def lambda_handler(event, context):
             break
 
     if existing_id:
-        print(f"AgentCore Runtime already exists, updating: {agent_name} (id={existing_id})")
+        print(f"AgentCore Runtime already exists: {agent_name} (id={existing_id})")
         existing = agentcore.get_agent_runtime(agentRuntimeId=existing_id)
-        runtime_arn = existing["agentRuntimeArn"]
-        update_kwargs = {
-            "agentRuntimeId": existing_id,
-            "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
-            "networkConfiguration": existing["networkConfiguration"],
-            "roleArn": role_arn,
-        }
-        if event.get("environment_variables"):
-            update_kwargs["environmentVariables"] = event["environment_variables"]
-        agentcore.update_agent_runtime(**update_kwargs)
-        print(f"AgentCore Runtime updated: {agent_name}")
-    else:
+
+        existing_subnets = set(
+            existing.get("networkConfiguration", {})
+                    .get("networkModeConfig", {})
+                    .get("subnetIds", [])
+        )
+        desired_subnets = set(network_mode_config.get("subnet_ids", [])) if network_mode_config else set()
+
+        if desired_subnets and existing_subnets and existing_subnets != desired_subnets:
+            print(f"Subnet change detected — deleting and recreating Runtime: {existing_id}")
+            agentcore.delete_agent_runtime(agentRuntimeId=existing_id)
+            for _ in range(30):
+                try:
+                    agentcore.get_agent_runtime(agentRuntimeId=existing_id)
+                    time.sleep(5)
+                except Exception:
+                    break
+            existing_id = None  # 아래 create 블록에서 처리
+        else:
+            runtime_arn = existing["agentRuntimeArn"]
+            update_kwargs = {
+                "agentRuntimeId": existing_id,
+                "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
+                "roleArn": role_arn,
+            }
+            if event.get("environment_variables"):
+                update_kwargs["environmentVariables"] = event["environment_variables"]
+            agentcore.update_agent_runtime(**update_kwargs)
+            print(f"AgentCore Runtime updated: {agent_name}")
+
+    if not existing_id:
+        # 신규 생성 또는 서브넷 변경으로 인한 재생성
         print(f"Creating AgentCore Runtime: {agent_name}")
         last_error = None
         for attempt in range(6):
             try:
-                response = agentcore.create_agent_runtime(
-                    agentRuntimeName=agent_name,
-                    agentRuntimeArtifact={"containerConfiguration": {"containerUri": image_uri}},
-                    networkConfiguration={"networkMode": network_mode},
-                    roleArn=role_arn,
-                    **( {"environmentVariables": event["environment_variables"]} if event.get("environment_variables") else {} )
-                )
-                runtime_arn = response["agentRuntimeArn"]
+                if network_mode_config:
+                    resp_body = _create_runtime_via_http(
+                        region, agent_name, image_uri, role_arn,
+                        network_mode, network_mode_config,
+                        event.get("environment_variables"),
+                    )
+                    print(f"HTTP create response: {json.dumps(resp_body)}")
+                    runtime_arn = resp_body["agentRuntimeArn"]
+                else:
+                    response = agentcore.create_agent_runtime(
+                        agentRuntimeName=agent_name,
+                        agentRuntimeArtifact={"containerConfiguration": {"containerUri": image_uri}},
+                        networkConfiguration={"networkMode": network_mode},
+                        roleArn=role_arn,
+                        **( {"environmentVariables": event["environment_variables"]} if event.get("environment_variables") else {} )
+                    )
+                    runtime_arn = response["agentRuntimeArn"]
                 last_error = None
                 break
             except agentcore.exceptions.ValidationException as e:
                 if "Role validation failed" in str(e):
+                    print(f"Role not ready yet, retrying in 5s... (attempt {attempt+1}/6)")
+                    time.sleep(5)
+                    last_error = e
+                else:
+                    raise
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8")
+                if "Role validation failed" in body:
                     print(f"Role not ready yet, retrying in 5s... (attempt {attempt+1}/6)")
                     time.sleep(5)
                     last_error = e
