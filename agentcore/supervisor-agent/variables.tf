@@ -43,3 +43,26 @@ variable "agentcore_network_mode" {
 }
 
 # ECR 레포는 ecr 모듈에서 관리 (ecr/ecr.tf)
+
+variable "analysis_backend_url" {
+  description = "Analysis Backend API URL (ALB or API Gateway)"
+  type        = string
+}
+
+variable "bedrock_model_id" {
+  description = "Bedrock model ID for LLM"
+  type        = string
+  default     = "anthropic.claude-3-haiku-20240307-v1:0"
+}
+
+variable "use_memory" {
+  description = "AgentCore Memory 사용 여부"
+  type        = bool
+  default     = true
+}
+
+variable "memory_id" {
+  description = "AgentCore Memory ID"
+  type        = string
+  default     = ""
+}

@@ -43,3 +43,9 @@ variable "agentcore_network_mode" {
 }
 
 # ECR 레포는 ecr 모듈에서 관리 (ecr/ecr.tf)
+
+variable "bedrock_model_id" {
+  description = "Bedrock model ID for LLM"
+  type        = string
+  default     = "anthropic.claude-3-haiku-20240307-v1:0"
+}

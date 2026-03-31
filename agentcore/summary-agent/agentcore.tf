@@ -16,6 +16,10 @@ resource "aws_lambda_invocation" "agentcore_runtime" {
     network_mode = var.agentcore_network_mode
     idle_timeout = var.agentcore_idle_timeout
     max_lifetime = var.agentcore_max_lifetime
+    environment_variables = {
+      AWS_REGION       = var.region
+      BEDROCK_MODEL_ID = var.bedrock_model_id
+    }
   })
 
   triggers = {

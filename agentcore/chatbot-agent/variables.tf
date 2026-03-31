@@ -43,3 +43,27 @@ variable "agentcore_network_mode" {
 }
 
 # ECR 레포는 ecr 모듈에서 관리 (ecr/ecr.tf)
+
+variable "bedrock_model_id" {
+  description = "Bedrock model ID for LLM"
+  type        = string
+  default     = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+}
+
+variable "kb_local_path" {
+  description = "Knowledge Base 로컬 경로"
+  type        = string
+  default     = "/app"
+}
+
+variable "kb_top_k" {
+  description = "Knowledge Base 검색 결과 수"
+  type        = number
+  default     = 3
+}
+
+variable "use_memory" {
+  description = "AgentCore Memory 사용 여부"
+  type        = bool
+  default     = true
+}

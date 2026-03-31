@@ -31,7 +31,7 @@ SUPERVISOR_AGENT_ARN=arn:aws:bedrock-agentcore:ap-northeast-2:620758375333:runti
 USER_SERVICE_URL=http://user-service.internal:8000
 
 # ── Redis (필수) ──────────────────────────────────────────────────────────────
-REDIS_PORT=cdci-prd-chatbot-redis.o3vxex.0001.apn2.cache.amazonaws.com:6379
+REDIS_HOST=cdci-prd-chatbot-redis.o3vxex.0001.apn2.cache.amazonaws.com
 REDIS_PORT=6379
 REDIS_DB=0
 

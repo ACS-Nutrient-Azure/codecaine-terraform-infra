@@ -81,8 +81,19 @@ def lambda_handler(event, context):
             break
 
     if existing_id:
-        print(f"AgentCore Runtime already exists, skipping: {agent_name} (id={existing_id})")
-        runtime_arn = agentcore.get_agent_runtime(agentRuntimeId=existing_id)["agentRuntimeArn"]
+        print(f"AgentCore Runtime already exists, updating: {agent_name} (id={existing_id})")
+        existing = agentcore.get_agent_runtime(agentRuntimeId=existing_id)
+        runtime_arn = existing["agentRuntimeArn"]
+        update_kwargs = {
+            "agentRuntimeId": existing_id,
+            "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
+            "networkConfiguration": existing["networkConfiguration"],
+            "roleArn": role_arn,
+        }
+        if event.get("environment_variables"):
+            update_kwargs["environmentVariables"] = event["environment_variables"]
+        agentcore.update_agent_runtime(**update_kwargs)
+        print(f"AgentCore Runtime updated: {agent_name}")
     else:
         print(f"Creating AgentCore Runtime: {agent_name}")
         last_error = None
