@@ -8,6 +8,49 @@ from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 
 
+def _update_runtime_via_http(region, existing_id, image_uri, role_arn, network_mode, network_mode_config, environment_variables=None):
+    """
+    botocore가 networkModeConfig를 미지원하므로 update도 직접 REST API 호출
+    PATCH /runtimes/{agentRuntimeId}
+    """
+    session = boto3.session.Session()
+    credentials = session.get_credentials().get_frozen_credentials()
+
+    url = f"https://bedrock-agentcore-control.{region}.amazonaws.com/runtimes/{existing_id}"
+
+    body = {
+        "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
+        "networkConfiguration": {"networkMode": network_mode},
+        "roleArn": role_arn,
+    }
+
+    if network_mode_config:
+        body["networkConfiguration"]["networkModeConfig"] = {
+            "subnets":        network_mode_config.get("subnet_ids", []),
+            "securityGroups": network_mode_config.get("security_group_ids", []),
+        }
+
+    if environment_variables:
+        body["environmentVariables"] = environment_variables
+
+    body_bytes = json.dumps(body).encode("utf-8")
+
+    request = AWSRequest(method="PUT", url=url, data=body_bytes, headers={
+        "Content-Type": "application/json",
+        "Accept":       "application/json",
+    })
+    SigV4Auth(credentials, "bedrock-agentcore", region).add_auth(request)
+
+    req = urllib.request.Request(
+        url,
+        data=body_bytes,
+        headers=dict(request.headers),
+        method="PUT",
+    )
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
 def _create_runtime_via_http(region, agent_name, image_uri, role_arn, network_mode, network_mode_config, environment_variables=None):
     """
     botocore가 networkModeConfig를 미지원하는 경우 직접 REST API 호출
@@ -153,14 +196,11 @@ def lambda_handler(event, context):
             existing_id = None  # 아래 create 블록에서 처리
         else:
             runtime_arn = existing["agentRuntimeArn"]
-            update_kwargs = {
-                "agentRuntimeId": existing_id,
-                "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
-                "roleArn": role_arn,
-            }
-            if event.get("environment_variables"):
-                update_kwargs["environmentVariables"] = event["environment_variables"]
-            agentcore.update_agent_runtime(**update_kwargs)
+            resp_body = _update_runtime_via_http(
+                region, existing_id, image_uri, role_arn,
+                network_mode, network_mode_config,
+                event.get("environment_variables"),
+            )
             print(f"AgentCore Runtime updated: {agent_name}")
 
     if not existing_id:
