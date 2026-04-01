@@ -1,46 +1,143 @@
 {
   "title": "X-Ray Traces",
-  "description": "분산 트레이싱 - 트레이스 분석 및 에러 추적",
+  "description": "분산 트레이싱 - 서비스 맵 및 에러 추적",
   "tags": ["xray", "traces", "cdci"],
   "timezone": "Asia/Seoul",
   "refresh": "1m",
   "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {
+    "time_options": ["1h", "3h", "6h"],
+    "refresh_intervals": ["30s", "1m", "5m"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "service_filter",
+        "label": "서비스",
+        "type": "custom",
+        "current": { "text": "All", "value": "" },
+        "options": [
+          { "text": "All",              "value": "",                                                          "selected": true },
+          { "text": "analysis",         "value": "service(id(name: \"cdci-prd-analysis\"))",                  "selected": false },
+          { "text": "chatbot",          "value": "service(id(name: \"cdci-prd-chatbot\"))",                   "selected": false },
+          { "text": "frontend",         "value": "service(id(name: \"cdci-prd-frontend\"))",                  "selected": false },
+          { "text": "history",          "value": "service(id(name: \"cdci-prd-history\"))",                   "selected": false },
+          { "text": "users",            "value": "service(id(name: \"cdci-prd-users\"))",                     "selected": false },
+          { "text": "analysis-agent",   "value": "service(id(name: \"cdci-prd-analysis-agent\"))",            "selected": false },
+          { "text": "chatbot-agent",    "value": "service(id(name: \"cdci-prd-chatbot-agent\"))",             "selected": false },
+          { "text": "supervisor-agent", "value": "service(id(name: \"cdci-prd-supervisor-agent\"))",          "selected": false },
+          { "text": "summary-agent",    "value": "service(id(name: \"cdci-prd-summary-agent\"))",             "selected": false },
+          { "text": "question-agent",   "value": "service(id(name: \"cdci-prd-question-agent\"))",            "selected": false }
+        ],
+        "query": ",service(id(name: \"cdci-prd-analysis\")),service(id(name: \"cdci-prd-chatbot\")),service(id(name: \"cdci-prd-frontend\")),service(id(name: \"cdci-prd-history\")),service(id(name: \"cdci-prd-users\")),service(id(name: \"cdci-prd-analysis-agent\")),service(id(name: \"cdci-prd-chatbot-agent\")),service(id(name: \"cdci-prd-supervisor-agent\")),service(id(name: \"cdci-prd-summary-agent\")),service(id(name: \"cdci-prd-question-agent\"))",
+        "hide": 0,
+        "refresh": 0,
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
-      "title": "최근 트레이스 전체",
-      "type": "table",
-      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 10 },
+      "title": "서비스 맵 (전체)",
+      "type": "nodeGraph",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 18 },
       "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
       "targets": [
         {
           "refId": "A",
+          "queryMode": "X-Ray",
+          "queryType": "getServiceMap",
+          "query": "",
+          "group": {
+            "FilterExpression": null,
+            "GroupARN": "arn:aws:xray:ap-northeast-2:620758375333:group/Default",
+            "GroupName": "Default",
+            "InsightsConfiguration": {
+              "InsightsEnabled": false,
+              "NotificationsEnabled": false
+            }
+          },
+          "region": "default"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "arc__success" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } },
+              { "id": "displayName", "value": "Success" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "arc__faults" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+              { "id": "displayName", "value": "Fault" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "arc__errors" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "semi-dark-yellow", "mode": "fixed" } },
+              { "id": "displayName", "value": "Error" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "arc__throttled" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } },
+              { "id": "displayName", "value": "Throttled" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "mainstat" },
+            "properties": [
+              { "id": "unit", "value": "ms/t" },
+              { "id": "displayName", "value": "Average response time" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "secondarystat" },
+            "properties": [
+              { "id": "unit", "value": "t/min" },
+              { "id": "displayName", "value": "Transactions per minute" }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    {
+      "id": 2,
+      "title": "트레이스 목록",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 18, "w": 24, "h": 10 },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "X-Ray",
           "queryType": "getTraceSummaries",
-          "region": "default",
-          "filter": ""
+          "query": "$service_filter",
+          "group": {
+            "FilterExpression": null,
+            "GroupARN": "arn:aws:xray:ap-northeast-2:620758375333:group/Default",
+            "GroupName": "Default",
+            "InsightsConfiguration": {
+              "InsightsEnabled": false,
+              "NotificationsEnabled": false
+            }
+          },
+          "region": "default"
         }
       ],
       "options": {
         "sortBy": [{ "displayName": "Duration", "desc": true }]
       },
-      "fieldConfig": {
-        "defaults": { "custom": { "filterable": true } }
-      }
-    },
-    {
-      "id": 2,
-      "title": "에러 / 결함 트레이스 (4xx / 5xx)",
-      "type": "table",
-      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 10 },
-      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
-      "targets": [
-        {
-          "refId": "A",
-          "queryType": "getTraceSummaries",
-          "region": "default",
-          "filter": "error OR fault"
-        }
-      ],
       "fieldConfig": {
         "defaults": { "custom": { "filterable": true } },
         "overrides": [
@@ -53,23 +150,146 @@
     },
     {
       "id": 3,
-      "title": "느린 트레이스 (> 0.5s)",
-      "type": "table",
-      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 10 },
+      "title": "서비스별 트레이스 수 (시간대별)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
       "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
       "targets": [
         {
           "refId": "A",
+          "queryMode": "X-Ray",
           "queryType": "getTraceSummaries",
-          "region": "default",
-          "filter": "responsetime > 0.5"
+          "query": "$service_filter",
+          "group": {
+            "FilterExpression": null,
+            "GroupARN": "arn:aws:xray:ap-northeast-2:620758375333:group/Default",
+            "GroupName": "Default",
+            "InsightsConfiguration": {
+              "InsightsEnabled": false,
+              "NotificationsEnabled": false
+            }
+          },
+          "region": "default"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 10 } }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 4,
+      "title": "서비스별 에러 트레이스 수",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "X-Ray",
+          "queryType": "getTraceSummaries",
+          "query": "fault = true AND http.status >= 400",
+          "group": {
+            "FilterExpression": null,
+            "GroupARN": "arn:aws:xray:ap-northeast-2:620758375333:group/Default",
+            "GroupName": "Default",
+            "InsightsConfiguration": {
+              "InsightsEnabled": false,
+              "NotificationsEnabled": false
+            }
+          },
+          "region": "default"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "color": { "fixedColor": "red", "mode": "fixed" }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 5,
+      "title": "서비스별 레이턴시 (평균)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 36, "w": 12, "h": 8 },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "X-Ray",
+          "queryType": "getTraceSummaries",
+          "query": "$service_filter",
+          "group": {
+            "FilterExpression": null,
+            "GroupARN": "arn:aws:xray:ap-northeast-2:620758375333:group/Default",
+            "GroupName": "Default",
+            "InsightsConfiguration": {
+              "InsightsEnabled": false,
+              "NotificationsEnabled": false
+            }
+          },
+          "region": "default"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 6,
+      "title": "최근 에러 트레이스 목록",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 36, "w": 12, "h": 8 },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "X-Ray",
+          "queryType": "getTraceSummaries",
+          "query": "fault = true",
+          "group": {
+            "FilterExpression": null,
+            "GroupARN": "arn:aws:xray:ap-northeast-2:620758375333:group/Default",
+            "GroupName": "Default",
+            "InsightsConfiguration": {
+              "InsightsEnabled": false,
+              "NotificationsEnabled": false
+            }
+          },
+          "region": "default"
         }
       ],
       "options": {
         "sortBy": [{ "displayName": "Duration", "desc": true }]
       },
       "fieldConfig": {
-        "defaults": { "custom": { "filterable": true } }
+        "defaults": { "custom": { "filterable": true } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "HasError" },
+            "properties": [{ "id": "custom.displayMode", "value": "color-background" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Http.Status" },
+            "properties": [{ "id": "custom.displayMode", "value": "color-background" }]
+          }
+        ]
       }
     }
   ]

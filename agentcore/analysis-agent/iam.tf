@@ -172,3 +172,24 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
     ]
   })
 }
+
+# X-Ray 트레이스 전송 권한 (aws-xray-sdk 직접 API 호출용)
+resource "aws_iam_role_policy" "agentcore_xray" {
+  name = "xray-traces"
+  role = aws_iam_role.agentcore_runtime.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "xray:GetSamplingRules",
+        "xray:GetSamplingTargets",
+        "xray:GetSamplingStatisticSummaries"
+      ]
+      Resource = "*"
+    }]
+  })
+}

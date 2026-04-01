@@ -5,6 +5,29 @@
   "timezone": "Asia/Seoul",
   "refresh": "1m",
   "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "서비스",
+        "type": "custom",
+        "current": { "text": "All", "value": "%" },
+        "options": [
+          { "text": "All",              "value": "%",                "selected": true },
+          { "text": "analysis-agent",   "value": "analysis-agent",   "selected": false },
+          { "text": "chatbot-agent",    "value": "chatbot-agent",    "selected": false },
+          { "text": "supervisor-agent", "value": "supervisor-agent", "selected": false },
+          { "text": "summary-agent",    "value": "summary-agent",    "selected": false },
+          { "text": "question-agent",   "value": "question-agent",   "selected": false }
+        ],
+        "query": "%,analysis-agent,chatbot-agent,supervisor-agent,summary-agent,question-agent",
+        "hide": 0,
+        "refresh": 0,
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
   "panels": [
 
     {
@@ -25,28 +48,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["sum"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient",
-        "valueMode": "color"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "blue", "value": null }]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "horizontal", "displayMode": "gradient", "valueMode": "color" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] } } }
     },
 
     {
@@ -59,31 +67,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" WHERE \"status\" = 'error' GROUP BY agent_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["sum"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 20 }
-            ]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] } } }
     },
 
     {
@@ -96,23 +86,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_invocation_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "lineWidth": 2, "fillOpacity": 10 }
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
-        "tooltip": { "mode": "multi" }
-      }
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } }
     },
 
     {
@@ -133,28 +113,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_token_input_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["sum"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "displayName": "${__field.labels.agent_name}",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "purple", "value": null }]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": { "defaults": { "unit": "short", "displayName": "${__field.labels.agent_name}", "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] } } }
     },
 
     {
@@ -167,27 +132,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_token_output_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["sum"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "blue", "value": null }]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] } } }
     },
 
     {
@@ -200,23 +151,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_token_input_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name, model_id"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "lineWidth": 2 }
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
-        "tooltip": { "mode": "multi" }
-      }
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } }
     },
 
     {
@@ -229,23 +170,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(agent_token_output_total) FROM \"CDCI/AgentCore\" GROUP BY agent_name, model_id"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "lineWidth": 2 }
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
-        "tooltip": { "mode": "multi" }
-      }
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } }
     },
 
     {
@@ -266,33 +197,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT AVG(agent_latency_seconds) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "orientation": "auto",
-        "showThresholdMarkers": true
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "min": 0,
-          "max": 30,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 15 }
-            ]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdMarkers": true },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "max": 30, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 15 }] } } }
     },
 
     {
@@ -305,40 +216,25 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 0,
+          "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
           "region": "default",
           "namespace": "AWS/Bedrock",
           "metricName": "InvocationLatency",
           "dimensions": {},
-          "statistic": "p95",
-          "period": "60",
-          "alias": "P95"
+          "statistic": "p95", "period": "60", "alias": "P95"
         },
         {
           "refId": "B",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 0,
+          "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
           "region": "default",
           "namespace": "AWS/Bedrock",
           "metricName": "InvocationLatency",
           "dimensions": {},
-          "statistic": "Average",
-          "period": "60",
-          "alias": "AVG"
+          "statistic": "Average", "period": "60", "alias": "AVG"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "custom": { "lineWidth": 2 }
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      }
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "lineWidth": 2 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
     },
 
     {
@@ -351,23 +247,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT AVG(agent_latency_seconds) FROM \"CDCI/AgentCore\" GROUP BY agent_name"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": { "lineWidth": 2, "fillOpacity": 10 }
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
-        "tooltip": { "mode": "multi" }
-      }
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } }
     },
 
     {
@@ -388,27 +274,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(tool_execution_total) FROM \"CDCI/AgentCore\" GROUP BY tool_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["sum"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } } }
     },
 
     {
@@ -421,27 +293,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE \"result\" = 'approved' GROUP BY tool_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["sum"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } } }
     },
 
     {
@@ -454,27 +312,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT SUM(tool_approval_total) FROM \"CDCI/AgentCore\" WHERE \"result\" = 'rejected' GROUP BY tool_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["sum"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "red", "value": null }]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] } } }
     },
 
     {
@@ -487,31 +331,13 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 1,
-          "metricEditorMode": 1,
+          "queryMode": "Metrics", "metricQueryType": 1, "metricEditorMode": 1,
           "region": "default",
           "sqlExpression": "SELECT AVG(tool_execution_duration_seconds) FROM \"CDCI/AgentCore\" GROUP BY tool_name"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "orientation": "horizontal",
-        "displayMode": "gradient"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 2 },
-              { "color": "red", "value": 10 }
-            ]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 10 }] } } }
     },
 
     {
@@ -532,38 +358,16 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 0,
+          "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
           "region": "default",
           "namespace": "AWS/ElastiCache",
           "metricName": "CacheHitRate",
           "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
-          "statistic": "Average",
-          "period": "300",
-          "alias": "캐시 히트율"
+          "statistic": "Average", "period": "300", "alias": "캐시 히트율"
         }
       ],
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "orientation": "auto",
-        "showThresholdMarkers": true
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit",
-          "min": 0,
-          "max": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 0.7 },
-              { "color": "green", "value": 0.9 }
-            ]
-          }
-        }
-      }
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdMarkers": true },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] } } }
     },
 
     {
@@ -576,51 +380,31 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 0,
+          "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
           "region": "default",
           "namespace": "AWS/ElastiCache",
           "metricName": "CacheHits",
           "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
-          "statistic": "Sum",
-          "period": "60",
-          "alias": "히트"
+          "statistic": "Sum", "period": "60", "alias": "히트"
         },
         {
           "refId": "B",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 0,
+          "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
           "region": "default",
           "namespace": "AWS/ElastiCache",
           "metricName": "CacheMisses",
           "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
-          "statistic": "Sum",
-          "period": "60",
-          "alias": "미스"
+          "statistic": "Sum", "period": "60", "alias": "미스"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "lineWidth": 2, "fillOpacity": 15 }
-        },
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 15 } },
         "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "히트" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "미스" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
-          }
+          { "matcher": { "id": "byName", "options": "히트" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "미스" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
         ]
       },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
-        "tooltip": { "mode": "multi" }
-      }
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } }
     },
 
     {
@@ -633,40 +417,83 @@
       "targets": [
         {
           "refId": "A",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 0,
+          "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
           "region": "default",
           "namespace": "AWS/ElastiCache",
           "metricName": "GetTypeCmds",
           "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
-          "statistic": "Sum",
-          "period": "60",
-          "alias": "GET"
+          "statistic": "Sum", "period": "60", "alias": "GET"
         },
         {
           "refId": "B",
-          "queryMode": "Metrics",
-          "metricQueryType": 0,
-          "metricEditorMode": 0,
+          "queryMode": "Metrics", "metricQueryType": 0, "metricEditorMode": 0,
           "region": "default",
           "namespace": "AWS/ElastiCache",
           "metricName": "SetTypeCmds",
           "dimensions": { "CacheClusterId": "cdci-prd-chatbot-redis" },
+          "statistic": "Sum", "period": "60", "alias": "SET"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] } }
+    },
+
+    {
+      "id": 18,
+      "title": "Bedrock 모델별 호출 수 (24h)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "AWS/Bedrock native metric - InvocationCount by ModelId",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/Bedrock",
+          "metricName": "Invocations",
           "statistic": "Sum",
-          "period": "60",
-          "alias": "SET"
+          "period": "300",
+          "dimensions": {},
+          "matchExact": false
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } }
+    },
+
+    {
+      "id": 19,
+      "title": "Bedrock 모델별 클라이언트 에러",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+      "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
+      "description": "AWS/Bedrock native metric - InvocationClientErrors by ModelId",
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "default",
+          "namespace": "AWS/Bedrock",
+          "metricName": "InvocationClientErrors",
+          "statistic": "Sum",
+          "period": "300",
+          "dimensions": {},
+          "matchExact": false
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "custom": { "lineWidth": 2 }
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "color": { "fixedColor": "red", "mode": "fixed" }
         }
       },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }
-      }
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } }
     }
 
   ]
