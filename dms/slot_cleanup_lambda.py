@@ -73,23 +73,40 @@ def _query_slots(conn) -> list[dict]:
     - wal_lag_bytes: 미소비 WAL 크기
     - inactive_since: active=false가 된 시각 (PostgreSQL 14+)
     """
-    rows = conn.run("""
-        SELECT
-            slot_name,
-            active,
-            active_pid,
-            pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)  AS wal_lag_bytes,
-            inactive_since
-        FROM pg_replication_slots
-        ORDER BY wal_lag_bytes DESC NULLS LAST
-    """)
+    # PostgreSQL 14+ 여부 확인 (inactive_since 컬럼 존재 여부)
+    version_row = conn.run("SELECT current_setting('server_version_num')::int")
+    pg_version = int(version_row[0][0])
+    has_inactive_since = pg_version >= 140000
+
+    if has_inactive_since:
+        rows = conn.run("""
+            SELECT
+                slot_name,
+                active,
+                active_pid,
+                pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)  AS wal_lag_bytes,
+                inactive_since
+            FROM pg_replication_slots
+            ORDER BY wal_lag_bytes DESC NULLS LAST
+        """)
+    else:
+        rows = conn.run("""
+            SELECT
+                slot_name,
+                active,
+                active_pid,
+                pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)  AS wal_lag_bytes,
+                NULL AS inactive_since
+            FROM pg_replication_slots
+            ORDER BY wal_lag_bytes DESC NULLS LAST
+        """)
+
     now = datetime.datetime.now(datetime.timezone.utc)
     result = []
     for row in rows:
         slot_name, active, active_pid, wal_lag_bytes, inactive_since = row
         wal_lag_bytes = int(wal_lag_bytes) if wal_lag_bytes is not None else 0
 
-        # inactive_since가 없는 구버전 PostgreSQL 대비 (active=false 시점 미지원)
         inactive_hours = None
         if inactive_since is not None:
             if inactive_since.tzinfo is None:
@@ -99,10 +116,10 @@ def _query_slots(conn) -> list[dict]:
         result.append({
             "slot_name":      slot_name,
             "active":         active,
-            "active_pid":     active_pid,       # None이면 연결 없음
+            "active_pid":     active_pid,
             "wal_lag_bytes":  wal_lag_bytes,
             "wal_lag_gb":     round(wal_lag_bytes / (1024 ** 3), 2),
-            "inactive_hours": inactive_hours,   # None이면 inactive_since 미지원
+            "inactive_hours": inactive_hours,
         })
     return result
 

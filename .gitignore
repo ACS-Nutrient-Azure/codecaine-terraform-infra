@@ -42,3 +42,6 @@ Thumbs.db
 
 # lambda package
 reminder/reminder/package
+
+# python package
+dms/files

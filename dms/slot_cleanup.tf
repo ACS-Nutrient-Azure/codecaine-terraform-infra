@@ -18,10 +18,28 @@ resource "aws_sns_topic" "dms_alert" {
 
 # ── Lambda 패키징 ─────────────────────────────────────────────────
 
+# ── Lambda 패키징 (pg8000 의존성 포함) ───────────────────────────
+
+# ── Lambda 패키징 ─────────────────────────────────────────────────
+
 data "archive_file" "slot_cleanup" {
   type        = "zip"
   source_file = "${path.module}/slot_cleanup_lambda.py"
   output_path = "${path.module}/files/slot_cleanup.zip"
+}
+
+# ── pg8000 Lambda Layer ───────────────────────────────────────────
+# 사전 준비: files/pg8000_layer.zip 을 로컬에서 빌드 후 커밋
+#   mkdir files\pg8000_layer\python
+#   pip install pg8000 -t files\pg8000_layer\python
+#   Compress-Archive -Path files\pg8000_layer\python -DestinationPath files\pg8000_layer.zip
+
+resource "aws_lambda_layer_version" "pg8000" {
+  layer_name          = "${local.name_prefix}-pg8000"
+  filename            = "${path.module}/files/pg8000_layer.zip"
+  source_code_hash    = filebase64sha256("${path.module}/files/pg8000_layer.zip")
+  compatible_runtimes = ["python3.12"]
+  description         = "pg8000 PostgreSQL driver"
 }
 
 # ── IAM Role ──────────────────────────────────────────────────────
@@ -118,9 +136,10 @@ resource "aws_lambda_function" "slot_cleanup" {
   timeout          = 300
   filename         = data.archive_file.slot_cleanup.output_path
   source_code_hash = data.archive_file.slot_cleanup.output_base64sha256
+  layers           = [aws_lambda_layer_version.pg8000.arn]
 
   vpc_config {
-    subnet_ids         = local.private_db_subnet_ids
+    subnet_ids         = local.private_app_subnet_ids
     security_group_ids = [aws_security_group.slot_cleanup_lambda.id]
   }
 

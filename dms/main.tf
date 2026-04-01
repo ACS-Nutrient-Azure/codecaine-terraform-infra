@@ -51,6 +51,17 @@ data "aws_subnets" "private_db" {
   }
 }
 
+data "aws_subnets" "private_app" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.main.id]
+  }
+  filter {
+    name   = "tag:Name"
+    values = ["*PRIVATE-APP*"]
+  }
+}
+
 data "aws_security_group" "rds" {
   vpc_id = data.aws_vpc.main.id
   filter {
@@ -78,8 +89,9 @@ data "aws_secretsmanager_secret_version" "chatbot_cluster" {
 }
 
 locals {
-  vpc_id                = data.aws_vpc.main.id
-  private_db_subnet_ids = data.aws_subnets.private_db.ids
+  vpc_id                 = data.aws_vpc.main.id
+  private_db_subnet_ids  = data.aws_subnets.private_db.ids
+  private_app_subnet_ids = data.aws_subnets.private_app.ids
 
   rds_users_sg_id    = data.aws_security_group.rds.id
   rds_analysis_sg_id = data.aws_security_group.rds.id
