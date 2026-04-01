@@ -41,7 +41,8 @@ Thumbs.db
 *.xml
 
 # lambda package
-reminder/reminder/package
+reminder/package
+!reminder/package/lambda_function.py
 
 # python package
 dms/files
