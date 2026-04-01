@@ -134,6 +134,16 @@ resource "aws_security_group_rule" "ecs_ingress_self" {
   security_group_id = aws_security_group.ecs_tasks.id
 }
 
+resource "aws_security_group_rule" "ecs_ingress_self_8080" {
+  type              = "ingress"
+  description       = "AgentCore inter-agent communication"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  self              = true
+  security_group_id = aws_security_group.ecs_tasks.id
+}
+
 resource "aws_security_group_rule" "ecs_egress_to_rds" {
   type                     = "egress"
   description              = "PostgreSQL to RDS"
