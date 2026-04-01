@@ -596,23 +596,19 @@ resource "aws_ecs_task_definition" "services" {
           },
           {
             name      = "DB_HOST"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/
-  ${var.environment}/rds/${each.value.name}-cluster/endpoint"
+            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/endpoint"
           },
           {
             name      = "DB_PORT"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/
-  ${var.environment}/rds/${each.value.name}-cluster/port"
+            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/port"
           },
           {
             name      = "DB_NAME"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/
-  ${var.environment}/rds/${each.value.name}-cluster/dbname"
+            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/dbname"
           },
           {
             name      = "DB_USER"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/
-  ${var.environment}/rds/${each.value.name}-cluster/username"
+            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/username"
           }
         ] : []
 
@@ -626,8 +622,7 @@ resource "aws_ecs_task_definition" "services" {
         }
 
         healthCheck = {
-          command     = ["CMD-SHELL", "curl -f http://localhost:${each.value.container_port}${each.value.health_path} || exit
-  1"]
+          command     = ["CMD-SHELL", "curl -f http://localhost:${each.value.container_port}${each.value.health_path} || exit 1"]
           interval    = 30
           timeout     = 5
           retries     = 3
@@ -736,15 +731,6 @@ resource "aws_ecs_task_definition" "services" {
     for_each = toset(["users", "history", "analysis", "chatbot"])
     name     = "${var.project_name}-${var.environment}-${each.key}-cluster-secret"
   }
-
-# Get current AWS account ID
-data "aws_caller_identity" "current" {}
-
-# 각 서비스별 Secrets Manager 시크릿 ARN 조회 (랜덤 suffix 포함한 실제 ARN 획득)
-data "aws_secretsmanager_secret" "cluster" {
-  for_each = toset(["users", "history", "analysis", "chatbot"])
-  name     = "${var.project_name}-${var.environment}-${each.key}-cluster-secret"
-}
 
 # =============================================================================
 # AWS Cloud Map — ECS 서비스 간 VPC 내부 통신용 Private DNS
