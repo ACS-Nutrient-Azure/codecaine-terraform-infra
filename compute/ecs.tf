@@ -707,6 +707,8 @@ resource "aws_ecs_task_definition" "services" {
 
     enable_execute_command = var.enable_ecs_exec
 
+    propagate_tags = "SERVICE"
+
     lifecycle {
       create_before_destroy = false
       ignore_changes = [

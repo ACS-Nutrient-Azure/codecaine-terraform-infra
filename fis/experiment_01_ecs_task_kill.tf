@@ -16,7 +16,6 @@ resource "aws_fis_experiment_template" "ecs_task_kill" {
   description = "[시나리오 01] ECS 태스크 강제 종료 - 자동 복구 검증"
   role_arn    = aws_iam_role.fis.arn
 
-  # 실험 중단 조건: DR Composite Alarm이 ALARM 상태가 되면 즉시 중단
   stop_condition {
     source = "aws:cloudwatch:alarm"
     value  = var.stop_condition_alarm_arn
@@ -48,7 +47,35 @@ resource "aws_fis_experiment_template" "ecs_task_kill" {
     }
   }
 
-  # ── 타겟: users 서비스 태스크 (50%) ───────────────────────
+  # ── 액션 3: analysis 서비스 태스크 50% 종료 ───────────────
+  action {
+    name        = "kill-analysis-tasks"
+    action_id   = "aws:ecs:stop-task"
+    description = "analysis 서비스 ECS 태스크 강제 종료"
+
+    start_after = ["kill-chatbot-tasks"]
+
+    target {
+      key   = "Tasks"
+      value = "ecs-analysis-tasks"
+    }
+  }
+
+  # ── 액션 4: history 서비스 태스크 50% 종료 ────────────────
+  action {
+    name        = "kill-history-tasks"
+    action_id   = "aws:ecs:stop-task"
+    description = "history 서비스 ECS 태스크 강제 종료"
+
+    start_after = ["kill-analysis-tasks"]
+
+    target {
+      key   = "Tasks"
+      value = "ecs-history-tasks"
+    }
+  }
+
+  # ── 타겟: users ────────────────────────────────────────────
   target {
     name           = "ecs-users-tasks"
     resource_type  = "aws:ecs:task"
@@ -65,7 +92,7 @@ resource "aws_fis_experiment_template" "ecs_task_kill" {
     }
   }
 
-  # ── 타겟: chatbot 서비스 태스크 (50%) ─────────────────────
+  # ── 타겟: chatbot ──────────────────────────────────────────
   target {
     name           = "ecs-chatbot-tasks"
     resource_type  = "aws:ecs:task"
@@ -74,6 +101,40 @@ resource "aws_fis_experiment_template" "ecs_task_kill" {
     resource_tag {
       key   = "Service"
       value = "chatbot"
+    }
+
+    filter {
+      path   = "clusterArn"
+      values = [data.terraform_remote_state.compute.outputs.ecs_cluster_id]
+    }
+  }
+
+  # ── 타겟: analysis ─────────────────────────────────────────
+  target {
+    name           = "ecs-analysis-tasks"
+    resource_type  = "aws:ecs:task"
+    selection_mode = "PERCENT(50)"
+
+    resource_tag {
+      key   = "Service"
+      value = "analysis"
+    }
+
+    filter {
+      path   = "clusterArn"
+      values = [data.terraform_remote_state.compute.outputs.ecs_cluster_id]
+    }
+  }
+
+  # ── 타겟: history ──────────────────────────────────────────
+  target {
+    name           = "ecs-history-tasks"
+    resource_type  = "aws:ecs:task"
+    selection_mode = "PERCENT(50)"
+
+    resource_tag {
+      key   = "Service"
+      value = "history"
     }
 
     filter {
@@ -92,5 +153,55 @@ resource "aws_fis_experiment_template" "ecs_task_kill" {
   tags = {
     Name     = "${upper(var.project_name)}-${upper(var.environment)}-FIS-ECS-TASK-KILL"
     Scenario = "01-ecs-task-kill"
+  }
+}
+
+# ── history 서비스 단독 장애 실험 ─────────────────────────────
+resource "aws_fis_experiment_template" "ecs_task_kill_history" {
+  description = "[시나리오 01-history] history 서비스 ECS 태스크 강제 종료 - 단독 복구 검증"
+  role_arn    = aws_iam_role.fis.arn
+
+  stop_condition {
+    source = "aws:cloudwatch:alarm"
+    value  = var.stop_condition_alarm_arn
+  }
+
+  action {
+    name        = "kill-history-tasks"
+    action_id   = "aws:ecs:stop-task"
+    description = "history 서비스 ECS 태스크 강제 종료"
+
+    target {
+      key   = "Tasks"
+      value = "ecs-history-tasks"
+    }
+  }
+
+  target {
+    name           = "ecs-history-tasks"
+    resource_type  = "aws:ecs:task"
+    selection_mode = "PERCENT(50)"
+
+    resource_tag {
+      key   = "Service"
+      value = "history"
+    }
+
+    filter {
+      path   = "clusterArn"
+      values = [data.terraform_remote_state.compute.outputs.ecs_cluster_id]
+    }
+  }
+
+  log_configuration {
+    log_schema_version = 2
+    cloudwatch_logs_configuration {
+      log_group_arn = "${aws_cloudwatch_log_group.fis.arn}:*"
+    }
+  }
+
+  tags = {
+    Name     = "${upper(var.project_name)}-${upper(var.environment)}-FIS-ECS-TASK-KILL-HISTORY"
+    Scenario = "01-ecs-task-kill-history"
   }
 }
