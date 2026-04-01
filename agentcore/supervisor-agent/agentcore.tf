@@ -23,10 +23,10 @@ resource "aws_lambda_invocation" "agentcore_runtime" {
     environment_variables = {
       QUESTION_AGENT_ARN   = data.terraform_remote_state.chatbot_agent.outputs.agentcore_runtime_arn
       SUMMARY_AGENT_ARN    = data.terraform_remote_state.summary_agent.outputs.agentcore_runtime_arn
-      ANALYSIS_BACKEND_URL = var.analysis_backend_url
+      ANALYSIS_BACKEND_URL = data.terraform_remote_state.compute.outputs.analysis_internal_url
       BEDROCK_MODEL_ID     = var.bedrock_model_id
       USE_MEMORY           = tostring(var.use_memory)
-      MEMORY_ID            = var.memory_id
+      MEMORY_ID            = data.terraform_remote_state.memory.outputs.memory_id
       LLM_PROVIDER         = "bedrock"
       AWS_REGION           = var.region
     }
@@ -38,7 +38,7 @@ resource "aws_lambda_invocation" "agentcore_runtime" {
     trust_policy_hash    = sha256(aws_iam_role.agentcore_runtime.assume_role_policy)
     question_agent_arn   = data.terraform_remote_state.chatbot_agent.outputs.agentcore_runtime_arn
     summary_agent_arn    = data.terraform_remote_state.summary_agent.outputs.agentcore_runtime_arn
-    analysis_backend_url = var.analysis_backend_url
+    analysis_backend_url = data.terraform_remote_state.compute.outputs.analysis_internal_url
   }
 
   depends_on = [aws_iam_role.agentcore_runtime]

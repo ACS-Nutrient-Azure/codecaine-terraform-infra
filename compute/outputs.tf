@@ -113,6 +113,11 @@ output "redis_port" {
   value       = aws_elasticache_cluster.chatbot.port
 }
 
+output "analysis_internal_url" {
+  description = "Cloud Map internal DNS URL for analysis service"
+  value       = "http://analysis.${var.project_name}-${var.environment}.internal:8000"
+}
+
 # DR Failover 모듈에서 참조하는 outputs
 output "alb_arn_suffix" {
   description = "ALB ARN suffix for CloudWatch metrics"

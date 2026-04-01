@@ -154,6 +154,16 @@ resource "aws_security_group_rule" "ecs_egress_to_rds" {
   security_group_id        = aws_security_group.ecs_tasks.id
 }
 
+resource "aws_security_group_rule" "ecs_egress_self_8000" {
+  type              = "egress"
+  description       = "AgentCore to ECS analysis service (Cloud Map internal)"
+  from_port         = 8000
+  to_port           = 8000
+  protocol          = "tcp"
+  self              = true
+  security_group_id = aws_security_group.ecs_tasks.id
+}
+
 resource "aws_security_group_rule" "ecs_egress_to_redis" {
   type                     = "egress"
   description              = "Redis to ElastiCache"
