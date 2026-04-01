@@ -29,6 +29,11 @@ resource "aws_rds_cluster_parameter_group" "aurora" {
     apply_method = "pending-reboot"
   }
 
+  parameter {
+    name  = "max_slot_wal_keep_size"
+    value = "10240"
+  }
+
   lifecycle {
     create_before_destroy = true
   }

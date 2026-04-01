@@ -14,6 +14,11 @@ resource "aws_db_parameter_group" "postgres" {
     value = "pg_stat_statements"
   }
 
+  parameter {
+    name  = "max_slot_wal_keep_size"
+    value = "10240"
+  }
+
   lifecycle {
     create_before_destroy = true
   }
