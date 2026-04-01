@@ -4,9 +4,9 @@
   "tags": ["xray", "traces", "cdci"],
   "timezone": "Asia/Seoul",
   "refresh": "1m",
-  "time": { "from": "now-24h", "to": "now" },
+  "time": { "from": "now-3h", "to": "now" },
   "timepicker": {
-    "time_options": ["3h", "6h", "24h", "48h"],
+    "time_options": ["1h", "3h"],
     "refresh_intervals": ["30s", "1m", "5m"]
   },
   "templating": {
@@ -43,6 +43,7 @@
       "title": "서비스 맵 (전체)",
       "type": "nodeGraph",
       "gridPos": { "x": 0, "y": 0, "w": 24, "h": 18 },
+      "timeFrom": "3h",
       "datasource": { "type": "grafana-x-ray-datasource", "uid": "cfh299z8g6l1ce" },
       "targets": [
         {

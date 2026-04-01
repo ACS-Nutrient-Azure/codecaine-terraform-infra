@@ -25,3 +25,47 @@ variable "grafana_api_key" {
   type        = string
   sensitive   = true
 }
+
+# ============================================================
+# CloudWatch Alarms 변수
+# ============================================================
+
+variable "alarm_email" {
+  description = "Email address to receive CloudWatch alarm notifications"
+  type        = string
+  sensitive   = true
+}
+
+variable "alarm_cpu_threshold" {
+  description = "ECS CPU utilization alarm threshold (%)"
+  type        = number
+  default     = 80
+}
+
+variable "alarm_memory_threshold" {
+  description = "ECS memory utilization alarm threshold (%)"
+  type        = number
+  default     = 85
+}
+
+# ============================================================
+# Phase 2 변수
+# ============================================================
+
+variable "bedrock_model_id" {
+  description = "Bedrock model ID for alarm enrichment (Claude Haiku)"
+  type        = string
+  default     = "apac.anthropic.claude-3-haiku-20240307-v1:0"
+}
+
+variable "ses_sender_email" {
+  description = "SES verified sender email for enriched alarm notifications"
+  type        = string
+  sensitive   = true
+}
+
+variable "alarm_recipient_email" {
+  description = "Recipient email address for enriched alarm notifications"
+  type        = string
+  sensitive   = true
+}

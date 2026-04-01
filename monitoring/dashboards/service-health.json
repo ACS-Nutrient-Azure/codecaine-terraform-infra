@@ -5,6 +5,29 @@
   "timezone": "Asia/Seoul",
   "refresh": "1m",
   "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "서비스",
+        "type": "custom",
+        "current": { "text": "All", "value": "%" },
+        "options": [
+          { "text": "All",      "value": "%",                          "selected": true },
+          { "text": "analysis", "value": "cdci-prd-analysis-service",  "selected": false },
+          { "text": "chatbot",  "value": "cdci-prd-chatbot-service",   "selected": false },
+          { "text": "frontend", "value": "cdci-prd-frontend-service",  "selected": false },
+          { "text": "history",  "value": "cdci-prd-history-service",   "selected": false },
+          { "text": "users",    "value": "cdci-prd-users-service",     "selected": false }
+        ],
+        "query": "%,cdci-prd-analysis-service,cdci-prd-chatbot-service,cdci-prd-frontend-service,cdci-prd-history-service,cdci-prd-users-service",
+        "hide": 0,
+        "refresh": 0,
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
@@ -89,7 +112,7 @@
     },
     {
       "id": 4,
-      "title": "ECS CPU 사용률 (서비스별)",
+      "title": "ECS CPU 사용률 ($service)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
       "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
@@ -104,7 +127,7 @@
     },
     {
       "id": 5,
-      "title": "ECS 메모리 사용률 (서비스별)",
+      "title": "ECS 메모리 사용률 ($service)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
       "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },
@@ -119,7 +142,7 @@
     },
     {
       "id": 6,
-      "title": "ECS 실행 중인 태스크 수",
+      "title": "ECS 실행 중인 태스크 수 ($service)",
       "type": "stat",
       "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
       "datasource": { "type": "cloudwatch", "uid": "bfh249rbispvkf" },

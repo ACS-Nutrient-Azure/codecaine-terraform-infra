@@ -115,3 +115,13 @@ resource "aws_grafana_workspace" "main" {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-GRAFANA"
   }
 }
+
+# ============================================================
+# Grafana SSO Role Association (Admin 그룹 접근 허용)
+# ============================================================
+resource "aws_grafana_role_association" "admins" {
+  count        = length(var.grafana_admin_groups) > 0 ? 1 : 0
+  role         = "ADMIN"
+  group_ids    = var.grafana_admin_groups
+  workspace_id = aws_grafana_workspace.main.id
+}

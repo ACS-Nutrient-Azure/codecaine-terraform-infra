@@ -418,321 +418,321 @@ resource "aws_iam_role_policy_attachment" "ecs_task_chatbot_observability" {
 
 # Task Definitions
 resource "aws_ecs_task_definition" "services" {
-    for_each = local.services
+  for_each = local.services
 
-    family                   = lower("${var.project_name}-${var.environment}-${each.value.name}")
-    network_mode             = "awsvpc"
-    requires_compatibilities = ["FARGATE"]
-    cpu                      = each.value.cpu
-    memory                   = each.value.memory
-    execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-    task_role_arn = each.key == "chatbot" ? aws_iam_role.ecs_task_chatbot.arn : (each.key == "users" ?
-  aws_iam_role.ecs_task_users.arn : aws_iam_role.ecs_task.arn)
+  family                   = lower("${var.project_name}-${var.environment}-${each.value.name}")
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = each.value.cpu
+  memory                   = each.value.memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  # chatbot은 S3 전용 Role, users는 Textract/codef-data Role, 나머지는 공통 Role
+  task_role_arn = each.key == "chatbot" ? aws_iam_role.ecs_task_chatbot.arn : (each.key == "users" ? aws_iam_role.ecs_task_users.arn : aws_iam_role.ecs_task.arn)
 
-    container_definitions = jsonencode([
-      {
-        name      = each.value.name
-        image     = "${data.terraform_remote_state.ecr.outputs.ecr_repository_urls[each.value.name]}:${data.aws_ecr_image.latest
-  [each.key].image_tags[0]}"
-        essential = true
+  container_definitions = jsonencode([
+    {
+      name      = each.value.name
+      image     = "${data.terraform_remote_state.ecr.outputs.ecr_repository_urls[each.value.name]}:${data.aws_ecr_image.latest[each.key].image_tags[0]}"
+      essential = true
 
-        portMappings = [
-          {
-            containerPort = each.value.container_port
-            protocol      = "tcp"
-          }
-        ]
-
-        environment = concat(
-          [
-            {
-              name  = "PROJECT_NAME"
-              value = var.project_name
-            },
-            {
-              name  = "ENVIRONMENT"
-              value = var.environment
-            },
-            {
-              name  = "AWS_REGION"
-              value = var.region
-            },
-            {
-              name  = "SERVICE_NAME"
-              value = each.value.name
-            },
-            {
-              name  = "ALLOWED_ORIGINS"
-              value = "https://${var.subdomain_prefix}.${var.domain_name}"
-            }
-          ],
-          contains(["chatbot"], each.key) ? [
-            {
-              name  = "ANALYSIS_SERVICE_URL"
-              value = "http://analysis.${var.project_name}-${var.environment}.internal:8000"
-            }
-          ] : [],
-          each.key == "analysis" ? [
-            {
-              name  = "USER_SERVICE_URL"
-              value = "http://users.${var.project_name}-${var.environment}.internal:8000"
-            }
-          ] : [],
-          each.key != "frontend" ? [
-            {
-              name  = "COGNITO_USER_POOL_ID"
-              value = data.terraform_remote_state.security.outputs.cognito_user_pool_id
-            },
-            {
-              name  = "COGNITO_CLIENT_ID"
-              value = data.terraform_remote_state.security.outputs.cognito_user_pool_client_id
-            },
-            {
-              name  = "COGNITO_REGION"
-              value = var.region
-            }
-          ] : [],
-          each.key == "chatbot" ? [
-            {
-              name  = "S3_BUCKET_NAME"
-              value = "${var.project_name}-${var.environment}-chatbot-json"
-            },
-            {
-              name  = "JWT_ALGORITHM"
-              value = "RS256"
-            },
-            {
-              name  = "SKIP_AUTH"
-              value = "false"
-            },
-            {
-              name  = "REDIS_HOST"
-              value = aws_elasticache_cluster.chatbot.cache_nodes[0].address
-            },
-            {
-              name  = "REDIS_PORT"
-              value = tostring(aws_elasticache_cluster.chatbot.port)
-            },
-            {
-              name  = "REDIS_DB"
-              value = "0"
-            },
-            {
-              name  = "SUPERVISOR_AGENT_ARN"
-              value = data.terraform_remote_state.supervisor_agent.outputs.agentcore_runtime_arn
-            },
-            {
-              name  = "USER_SERVICE_URL"
-              value = "http://users.${var.project_name}-${var.environment}.internal:8000"
-            },
-            {
-              name  = "USE_MEMORY"
-              value = "true"
-            },
-            {
-              name  = "MEMORY_ID"
-              value = data.aws_ssm_parameter.agentcore_memory_id.value
-            }
-          ] : [],
-          each.key == "history" ? [
-            {
-              name  = "APP_ENV"
-              value = "production"
-            }
-          ] : [],
-          each.key == "users" ? [
-            {
-              name  = "S3_BUCKET_NAME"
-              value = "${var.project_name}-${var.environment}-codef-data"
-            },
-            {
-              name  = "CODEF_CLIENT_ID"
-              value = "eaf53337-58f3-486e-9431-2a6a06e91fe5"
-            },
-            {
-              name  = "CODEF_CLIENT_SECRET"
-              value = "5fc85ddb-37f6-4f17-a8dd-fc02535e9f4b"
-            },
-            {
-              name  = "APP_ENV"
-              value = "production"
-            }
-          ] : [],
-          each.key == "analysis" ? [
-            {
-              name  = "AGENTCORE_RUNTIME_ARN"
-              value = data.terraform_remote_state.analysis_agent.outputs.agentcore_runtime_arn
-            }
-          ] : [],
-          var.environment_variables,
-          [
-            {
-              name  = "OTEL_SERVICE_NAME"
-              value = "${var.project_name}-${var.environment}-${each.value.name}"
-            },
-            {
-              name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
-              value = "http://localhost:4317"
-            },
-            {
-              name  = "OTEL_PYTHON_DISTRO"
-              value = "aws_distro"
-            },
-            {
-              name  = "OTEL_PYTHON_CONFIGURATOR"
-              value = "aws_configurator"
-            },
-            {
-              name  = "OTEL_TRACES_SAMPLER"
-              value = "always_on"
-            }
-          ]
-        )
-
-        secrets = contains(["users", "history", "analysis", "chatbot"], each.key) ? [
-          {
-            name      = "DB_PASSWORD"
-            valueFrom = "${data.aws_secretsmanager_secret.cluster[each.key].arn}:password::"
-          },
-          {
-            name      = "DB_HOST"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/endpoint"
-          },
-          {
-            name      = "DB_PORT"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/port"
-          },
-          {
-            name      = "DB_NAME"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/dbname"
-          },
-          {
-            name      = "DB_USER"
-            valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/username"
-          }
-        ] : []
-
-        logConfiguration = {
-          logDriver = "awslogs"
-          options = {
-            "awslogs-group"         = aws_cloudwatch_log_group.services[each.key].name
-            "awslogs-region"        = var.region
-            "awslogs-stream-prefix" = "ecs"
-          }
+      portMappings = [
+        {
+          containerPort = each.value.container_port
+          protocol      = "tcp"
         }
-
-        healthCheck = {
-          command     = ["CMD-SHELL", "curl -f http://localhost:${each.value.container_port}${each.value.health_path} || exit 1"]
-          interval    = 30
-          timeout     = 5
-          retries     = 3
-          startPeriod = 60
-        }
-      },
-      {
-        name      = "otel-collector"
-        image     = "public.ecr.aws/aws-observability/aws-otel-collector:latest"
-        essential = false
-
-        portMappings = [
-          {
-            containerPort = 4317
-            protocol      = "tcp"
-          }
-        ]
-
-        command = ["--config=/etc/ecs/ecs-default-config.yaml"]
-
-        logConfiguration = {
-          logDriver = "awslogs"
-          options = {
-            "awslogs-group"         = aws_cloudwatch_log_group.services[each.key].name
-            "awslogs-region"        = var.region
-            "awslogs-stream-prefix" = "otel"
-          }
-        }
-
-        healthCheck = {
-          command     = ["CMD", "/healthcheck"]
-          interval    = 30
-          timeout     = 5
-          retries     = 3
-          startPeriod = 15
-        }
-      }
-    ])
-
-    tags = {
-      Name    = "${upper(var.project_name)}-${upper(var.environment)}-${upper(each.value.name)}-TASK-DEF"
-      Service = each.value.name
-    }
-  }
-
-  # ECS Services
-  resource "aws_ecs_service" "services" {
-    for_each = local.services
-
-    name            = lower("${var.project_name}-${var.environment}-${each.value.name}-service")
-    cluster         = aws_ecs_cluster.main.id
-    task_definition = aws_ecs_task_definition.services[each.key].arn
-    desired_count   = each.value.desired_count
-    launch_type     = "FARGATE"
-
-    network_configuration {
-      subnets          = local.private_app_subnet_ids
-      security_groups  = [local.ecs_tasks_security_group_id]
-      assign_public_ip = false
-    }
-
-    load_balancer {
-      target_group_arn = aws_lb_target_group.services[each.key].arn
-      container_name   = each.value.name
-      container_port   = each.value.container_port
-    }
-
-    dynamic "service_registries" {
-      for_each = contains(["users", "analysis"], each.key) ? [1] : []
-      content {
-        registry_arn = aws_service_discovery_service.services[each.key].arn
-      }
-    }
-
-    deployment_maximum_percent         = 200
-    deployment_minimum_healthy_percent = 100
-
-    deployment_circuit_breaker {
-      enable   = true
-      rollback = true
-    }
-
-    enable_execute_command = var.enable_ecs_exec
-
-    propagate_tags = "SERVICE"
-
-    lifecycle {
-      create_before_destroy = false
-      ignore_changes = [
-        desired_count
       ]
+
+      environment = concat(
+        [
+          {
+            name  = "PROJECT_NAME"
+            value = var.project_name
+          },
+          {
+            name  = "ENVIRONMENT"
+            value = var.environment
+          },
+          {
+            name  = "AWS_REGION"
+            value = var.region
+          },
+          {
+            name  = "SERVICE_NAME"
+            value = each.value.name
+          },
+          {
+            name  = "ALLOWED_ORIGINS"
+            value = "https://${var.subdomain_prefix}.${var.domain_name}"
+          }
+        ],
+        # chatbot 서비스에만 ANALYSIS_SERVICE_URL 주입
+        contains(["chatbot"], each.key) ? [
+          {
+            name  = "ANALYSIS_SERVICE_URL"
+            value = "http://analysis.${var.project_name}-${var.environment}.internal:8000"
+          }
+        ] : [],
+        # analysis 서비스에만 USER_SERVICE_URL 주입
+        each.key == "analysis" ? [
+          {
+            name  = "USER_SERVICE_URL"
+            value = "http://users.${var.project_name}-${var.environment}.internal:8000"
+          }
+        ] : [],
+        # backend 서비스에만 Cognito JWT 검증용 환경변수 주입 (frontend는 빌드타임에 CI/CD에서 처리)
+        each.key != "frontend" ? [
+          {
+            name  = "COGNITO_USER_POOL_ID"
+            value = data.terraform_remote_state.security.outputs.cognito_user_pool_id
+          },
+          {
+            name  = "COGNITO_CLIENT_ID"
+            value = data.terraform_remote_state.security.outputs.cognito_user_pool_client_id
+          },
+          {
+            name  = "COGNITO_REGION"
+            value = var.region
+          }
+        ] : [],
+        # chatbot 전용 환경변수
+        each.key == "chatbot" ? [
+          {
+            name  = "S3_BUCKET_NAME"
+            value = "${var.project_name}-${var.environment}-chatbot-json"
+          },
+          {
+            name  = "JWT_ALGORITHM"
+            value = "RS256"
+          },
+          {
+            name  = "SKIP_AUTH"
+            value = "false"
+          },
+          {
+            name  = "REDIS_HOST"
+            value = aws_elasticache_cluster.chatbot.cache_nodes[0].address
+          },
+          {
+            name  = "REDIS_PORT"
+            value = tostring(aws_elasticache_cluster.chatbot.port)
+          },
+          {
+            name  = "REDIS_DB"
+            value = "0"
+          },
+          {
+            name  = "SUPERVISOR_AGENT_ARN"
+            value = data.terraform_remote_state.supervisor_agent.outputs.agentcore_runtime_arn
+          },
+          {
+            name  = "USER_SERVICE_URL"
+            value = "http://users.${var.project_name}-${var.environment}.internal:8000"
+          },
+          {
+            name  = "USE_MEMORY"
+            value = "true"
+          },
+          {
+            name  = "MEMORY_ID"
+            value = data.aws_ssm_parameter.agentcore_memory_id.value
+          }
+        ] : [],
+        # history 전용 환경변수
+        each.key == "history" ? [
+          {
+            name  = "APP_ENV"
+            value = "production"
+          }
+        ] : [],
+        # users 전용 환경변수
+        each.key == "users" ? [
+          {
+            name  = "S3_BUCKET_NAME"
+            value = "${var.project_name}-${var.environment}-codef-data"
+          },
+          {
+            name  = "CODEF_CLIENT_ID"
+            value = "eaf53337-58f3-486e-9431-2a6a06e91fe5"
+          },
+          {
+            name  = "CODEF_CLIENT_SECRET"
+            value = "5fc85ddb-37f6-4f17-a8dd-fc02535e9f4b"
+          },
+          {
+            name  = "APP_ENV"
+            value = "production"
+          }
+        ] : [],
+        # analysis 전용 환경변수
+        each.key == "analysis" ? [
+          {
+            name  = "AGENTCORE_RUNTIME_ARN"
+            value = data.terraform_remote_state.analysis_agent.outputs.agentcore_runtime_arn
+          }
+        ] : [],
+        var.environment_variables,
+        # OTEL 환경변수 (AWS Distro for OpenTelemetry)
+        [
+          {
+            name  = "OTEL_SERVICE_NAME"
+            value = "${var.project_name}-${var.environment}-${each.value.name}"
+          },
+          {
+            name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+            value = "http://localhost:4317"
+          },
+          {
+            name  = "OTEL_PYTHON_DISTRO"
+            value = "aws_distro"
+          },
+          {
+            name  = "OTEL_PYTHON_CONFIGURATOR"
+            value = "aws_configurator"
+          },
+          {
+            name  = "OTEL_TRACES_SAMPLER"
+            value = "always_on"
+          }
+        ]
+      )
+
+      # DB 정보는 history, users, analysis에만 주입
+      # Secrets Manager valueFrom: data source로 실제 ARN 조회 후 JSON key 추출
+      secrets = contains(["users", "history", "analysis", "chatbot"], each.key) ? [
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = "${data.aws_secretsmanager_secret.cluster[each.key].arn}:password::"
+        },
+        {
+          name      = "DB_HOST"
+          valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/endpoint"
+        },
+        {
+          name      = "DB_PORT"
+          valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/port"
+        },
+        {
+          name      = "DB_NAME"
+          valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/dbname"
+        },
+        {
+          name      = "DB_USER"
+          valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/rds/${each.value.name}-cluster/username"
+        }
+      ] : []
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.services[each.key].name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:${each.value.container_port}${each.value.health_path} || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    },
+    {
+      name      = "otel-collector"
+      image     = "public.ecr.aws/aws-observability/aws-otel-collector:v0.43.0"
+      essential = false
+
+      portMappings = [
+        {
+          containerPort = 4317
+          protocol      = "tcp"
+        }
+      ]
+
+      command = ["--config=/etc/ecs/ecs-default-config.yaml"]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.services[each.key].name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "otel"
+        }
+      }
     }
+  ])
 
-    wait_for_steady_state = false
+  tags = {
+    Name    = "${upper(var.project_name)}-${upper(var.environment)}-${upper(each.value.name)}-TASK-DEF"
+    Service = each.value.name
+  }
+}
 
-    tags = {
-      Name    = "${upper(var.project_name)}-${upper(var.environment)}-${upper(each.value.name)}-SERVICE"
-      Service = each.value.name
-    }
+# ECS Services
+resource "aws_ecs_service" "services" {
+  for_each = local.services
 
-    depends_on = [aws_lb_listener.http, aws_lb_listener.https]
+  name            = lower("${var.project_name}-${var.environment}-${each.value.name}-service")
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.services[each.key].arn
+  desired_count   = each.value.desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = local.private_app_subnet_ids
+    security_groups  = [local.ecs_tasks_security_group_id]
+    assign_public_ip = false
   }
 
-  # Get current AWS account ID
-  data "aws_caller_identity" "current" {}
-
-  data "aws_secretsmanager_secret" "cluster" {
-    for_each = toset(["users", "history", "analysis", "chatbot"])
-    name     = "${var.project_name}-${var.environment}-${each.key}-cluster-secret"
+  load_balancer {
+    target_group_arn = aws_lb_target_group.services[each.key].arn
+    container_name   = each.value.name
+    container_port   = each.value.container_port
   }
+
+  dynamic "service_registries" {
+    for_each = contains(["users", "analysis"], each.key) ? [1] : []
+    content {
+      registry_arn = aws_service_discovery_service.services[each.key].arn
+    }
+  }
+
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 100
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  enable_execute_command = var.enable_ecs_exec
+
+  lifecycle {
+    create_before_destroy = false
+    ignore_changes = [
+      desired_count
+    ]
+  }
+
+  wait_for_steady_state = false
+
+  tags = {
+    Name    = "${upper(var.project_name)}-${upper(var.environment)}-${upper(each.value.name)}-SERVICE"
+    Service = each.value.name
+  }
+
+  depends_on = [aws_lb_listener.http, aws_lb_listener.https]
+}
+
+# Get current AWS account ID
+data "aws_caller_identity" "current" {}
+
+# 각 서비스별 Secrets Manager 시크릿 ARN 조회 (랜덤 suffix 포함한 실제 ARN 획득)
+data "aws_secretsmanager_secret" "cluster" {
+  for_each = toset(["users", "history", "analysis", "chatbot"])
+  name     = "${var.project_name}-${var.environment}-${each.key}-cluster-secret"
+}
 
 # =============================================================================
 # AWS Cloud Map — ECS 서비스 간 VPC 내부 통신용 Private DNS
