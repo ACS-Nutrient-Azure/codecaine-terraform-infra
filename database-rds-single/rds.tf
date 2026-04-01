@@ -36,7 +36,7 @@ resource "aws_db_instance" "users" {
   engine            = "postgres"
   engine_version    = var.postgres_version
   instance_class    = var.instance_class
-  allocated_storage = var.allocated_storage
+  allocated_storage = 25
 
   db_name  = "vitamin_user"
   username = "vitamin_user"
@@ -109,7 +109,7 @@ resource "aws_db_instance" "analysis" {
   engine            = "postgres"
   engine_version    = var.postgres_version
   instance_class    = var.instance_class
-  allocated_storage = var.allocated_storage
+  allocated_storage = 30
 
   db_name  = "vitamin_analysis"
   username = "vitamin_analysis"
