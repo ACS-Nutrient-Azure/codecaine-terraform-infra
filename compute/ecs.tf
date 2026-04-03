@@ -194,6 +194,12 @@ resource "aws_iam_role_policy" "ecs_task_runtime" {
           "ssmmessages:OpenDataChannel"
         ]
         Resource = "*"
+      },
+      # AgentCore 호출 권한 (analysis/chatbot 서비스 → AgentCore)
+      {
+        Effect   = "Allow"
+        Action   = "bedrock-agentcore:InvokeAgentRuntime"
+        Resource = "arn:aws:bedrock-agentcore:${var.region}:${data.aws_caller_identity.current.account_id}:runtime/*"
       }
     ]
   })
