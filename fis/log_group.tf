@@ -2,7 +2,7 @@
 
 resource "aws_cloudwatch_log_group" "fis" {
   name              = "/fis/${var.project_name}-${var.environment}"
-  retention_in_days = 30
+  retention_in_days = 3
 
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-FIS-LOGS"

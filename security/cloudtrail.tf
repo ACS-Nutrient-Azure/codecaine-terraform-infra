@@ -15,7 +15,7 @@ data "terraform_remote_state" "s3_buckets" {
 # CloudWatch Log Group for CloudTrail
 resource "aws_cloudwatch_log_group" "cloudtrail" {
   name              = "/aws/cloudtrail/${var.project_name}-${var.environment}"
-  retention_in_days = 90
+  retention_in_days = 3
 
   tags = {
     Name = "${upper(var.project_name)}-${upper(var.environment)}-CLOUDTRAIL-LOGS"

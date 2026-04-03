@@ -116,7 +116,7 @@ resource "aws_cloudwatch_log_group" "waf" {
   count = var.enable_waf ? 1 : 0
 
   name              = "aws-waf-logs-${var.project_name}-${var.environment}"
-  retention_in_days = 30
+  retention_in_days = 3
 
   tags = {
     Name = upper("${var.project_name}-${var.environment}-WAF-LOGS")

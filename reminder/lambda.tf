@@ -37,5 +37,5 @@ resource "aws_lambda_function" "reminder" {
 
 resource "aws_cloudwatch_log_group" "reminder" {
   name              = "/aws/lambda/${aws_lambda_function.reminder.function_name}"
-  retention_in_days = 7
+  retention_in_days = 3
 }

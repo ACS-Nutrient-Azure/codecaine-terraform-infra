@@ -24,7 +24,7 @@ subdomain_prefix = "www"
 
 # 모니터링
 enable_container_insights = true
-log_retention_days        = 7
+log_retention_days        = 3
 enable_ecs_exec           = false # 디버깅용
 
 # Bastion Host
