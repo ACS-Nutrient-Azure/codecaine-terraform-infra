@@ -29,8 +29,11 @@ resource "aws_fis_experiment_template" "nat_gateway_failure" {
   }
 
   # ── 액션: Private App Subnet egress 차단 (10분) ───────────
-  # scope = "egress"로 인터넷 방향 트래픽만 차단
-  # VPC 내부 통신(ECS ↔ RDS, ECS ↔ Redis)은 유지
+  # ⚠️  FIS 제약사항: aws:network:disrupt-connectivity는 scope = "all"만 지원
+  #   - ingress/egress 방향 구분 불가, 서브넷 전체 트래픽 차단
+  #   - VPC 내부 통신(ECS ↔ RDS, ECS ↔ Redis)도 함께 차단됨
+  #   - 의도치 않게 DR Composite Alarm 트리거 가능성 있음
+  #   - 실험 전 DR Composite Alarm을 수동으로 비활성화 권장
   action {
     name        = "block-nat-egress-2a"
     action_id   = "aws:network:disrupt-connectivity"

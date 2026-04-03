@@ -199,6 +199,20 @@ resource "aws_security_group_rule" "rds_ingress_from_ecs" {
   security_group_id        = aws_security_group.rds.id
 }
 
+# DR ECS (도쿄) → 서울 RDS 리전 간 접근 허용
+# ECS 클러스터 장애 시 도쿄 ECS가 서울 RDS에 직접 연결하는 시나리오 지원
+resource "aws_security_group_rule" "rds_ingress_from_dr_vpc" {
+  count = var.dr_vpc_cidr != "" ? 1 : 0
+
+  type              = "ingress"
+  description       = "PostgreSQL from DR VPC (Tokyo ECS to Seoul RDS cross-region)"
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  cidr_blocks       = [var.dr_vpc_cidr]
+  security_group_id = aws_security_group.rds.id
+}
+
 # =============================================================================
 # Redis Rules
 # =============================================================================

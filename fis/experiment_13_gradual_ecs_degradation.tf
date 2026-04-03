@@ -137,15 +137,28 @@ resource "aws_fis_experiment_template" "gradual_ecs_degradation" {
     }
   }
 
+  # ── Phase 2 대기: 부하 주입 후 3분 대기 ─────────────────
+  # ALB 헬스체크 3회 연속 실패(90초) + 여유 시간
+  # start_after로 duration 완료를 기다리면 T+12분이 되므로
+  # wait 액션으로 T+3분에 Phase 2 시작
+  action {
+    name        = "wait-phase2"
+    action_id   = "aws:fis:wait"
+    description = "Phase 2 시작 전 3분 대기 (ALB 헬스체크 실패 누적 대기)"
+
+    parameter {
+      key   = "duration"
+      value = "PT3M"
+    }
+  }
+
   # ── Phase 2: users 태스크 50% 종료 (3분 후) ──────────────
-  # CPU 부하로 이미 unhealthy 상태인 태스크 추가 제거
-  # → UnhealthyHostCount 급증
   action {
     name        = "kill-half-users"
     action_id   = "aws:ecs:stop-task"
     description = "users 태스크 50% 종료 (Phase 2: 헬스체크 실패 가속)"
 
-    start_after = ["cpu-stress-users", "cpu-stress-history", "memory-stress-chatbot"]
+    start_after = ["wait-phase2"]
 
     target {
       key   = "Tasks"
@@ -153,15 +166,27 @@ resource "aws_fis_experiment_template" "gradual_ecs_degradation" {
     }
   }
 
+  # ── Phase 3 대기: Phase 2 후 2분 대기 ────────────────────
+  action {
+    name        = "wait-phase3"
+    action_id   = "aws:fis:wait"
+    description = "Phase 3 시작 전 2분 대기"
+
+    start_after = ["wait-phase2"]
+
+    parameter {
+      key   = "duration"
+      value = "PT2M"
+    }
+  }
+
   # ── Phase 3: history 태스크 50% 종료 (5분 후) ────────────
-  # users + history + chatbot 모두 UnhealthyHostCount ≥ 1 달성
-  # → ecs_layer_failure Composite Alarm ALARM 전환
   action {
     name        = "kill-half-history"
     action_id   = "aws:ecs:stop-task"
     description = "history 태스크 50% 종료 (Phase 3: ECS 레이어 장애 완성)"
 
-    start_after = ["kill-half-users"]
+    start_after = ["wait-phase3"]
 
     target {
       key   = "Tasks"

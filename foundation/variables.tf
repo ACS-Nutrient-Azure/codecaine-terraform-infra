@@ -44,3 +44,8 @@ variable "private_db_subnet_cidrs" {
   default     = ["10.0.20.0/24", "10.0.21.0/24"]
 }
 
+variable "dr_vpc_cidr" {
+  description = "DR VPC CIDR block (도쿄 리전) - DR ECS → 서울 RDS 리전 간 접근 허용용"
+  type        = string
+  default     = ""
+}

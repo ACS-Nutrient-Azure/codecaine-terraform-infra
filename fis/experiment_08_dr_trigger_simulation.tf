@@ -77,13 +77,30 @@ resource "aws_fis_experiment_template" "dr_trigger_simulation" {
     }
   }
 
+  # ── 액션 3.5: ALB UnhealthyHostCount 알람 발화 대기 (3분) ──
+  # ECS 태스크 종료 후 ALB 헬스체크 3회 연속 실패(90초) + 여유 시간
+  # 이 대기 없이 DB Subnet 차단 시 Aurora 레이어 장애가 먼저 발화되어
+  # ECS 레이어 알람 발화 전에 DR이 트리거될 수 있음
+  action {
+    name        = "wait-for-ecs-alarm"
+    action_id   = "aws:fis:wait"
+    description = "ALB UnhealthyHostCount 알람 발화 대기 (3분)"
+
+    start_after = ["kill-all-chatbot-tasks"]
+
+    parameter {
+      key   = "duration"
+      value = "PT3M"
+    }
+  }
+
   # ── 액션 4: analysis-cluster 네트워크 차단 (Aurora 레이어 장애) ──
   action {
     name        = "block-db-subnet-2a"
     action_id   = "aws:network:disrupt-connectivity"
     description = "DB Subnet 2a 차단 (Aurora 연결 불가 시뮬레이션)"
 
-    start_after = ["kill-all-chatbot-tasks"]
+    start_after = ["wait-for-ecs-alarm"]
 
     parameter {
       key   = "duration"

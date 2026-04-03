@@ -35,8 +35,11 @@ resource "aws_fis_experiment_template" "elasticache_reboot" {
   }
 
   # ── 액션: Private App Subnet 2a → Redis 방향 egress 차단 (8분) ──
-  # scope = "egress"로 ECS → Redis 방향만 차단
-  # Redis 자체는 정상이나 ECS 태스크에서 접근 불가
+  # ⚠️  FIS 제약사항: aws:network:disrupt-connectivity는 scope = "all"만 지원
+  #   - ingress/egress 방향 구분 불가, 서브넷 전체 트래픽 차단
+  #   - VPC 내부 통신(ECS ↔ RDS 등)도 함께 차단됨
+  #   - 의도치 않게 DR Composite Alarm 트리거 가능성 있음
+  #   - 실험 전 DR Composite Alarm을 수동으로 비활성화 권장
   action {
     name        = "block-redis-egress-2a"
     action_id   = "aws:network:disrupt-connectivity"

@@ -7,16 +7,25 @@
 #
 # 대상: chatbot 서비스 (WebSocket 세션 유지로 메모리 집약적)
 #       태스크 메모리: 512MB
-# 액션: 메모리 90% 부하를 8분간 주입
+# 액션: CPU 90% 부하 + 태스크 강제 종료로 OOM 상황 시뮬레이션
+#
+# ⚠️  FIS 제약사항:
+#   - aws:ecs:task-memory-stress 액션은 FIS에서 미지원
+#   - CPU 부하(task-cpu-stress)로 응답 지연 → ALB 헬스체크 실패 유도
+#   - 실제 OOM Kill 검증은 ECS Exec으로 수동 수행 필요:
+#     aws ecs execute-command --cluster cdci-prd-cluster \
+#       --task <task-id> --container chatbot --interactive \
+#       --command "python3 -c \"a=[' '*1024*1024 for _ in range(600)]\""
+#
 # 기대 결과:
-#   - MemoryUtilization > 80% 지속 시 scale-out 발생
-#   - OOM Kill 발생 시 ECS가 태스크 자동 재시작
-#   - WebSocket 연결 끊김 → 클라이언트 재연결 로직 동작 확인
+#   - CPU 과부하로 ALB 헬스체크 타임아웃 → UnhealthyHostCount 증가
+#   - ECS Auto Scaling scale-out 트리거 (MemoryUtilization 알람 대신 CPU 알람)
+#   - 태스크 강제 종료 후 ECS가 자동 재시작
 #   - Redis 세션은 유지 (태스크 재시작과 무관)
 # ============================================================
 
 resource "aws_fis_experiment_template" "ecs_memory_stress" {
-  description = "[시나리오 09] ECS 메모리 부하 주입 - Auto Scaling 및 OOM 복구 검증 (chatbot)"
+  description = "[시나리오 09] ECS CPU 부하 주입 - Auto Scaling 및 태스크 재시작 복구 검증 (chatbot)"
   role_arn    = aws_iam_role.fis.arn
 
   stop_condition {
@@ -24,13 +33,13 @@ resource "aws_fis_experiment_template" "ecs_memory_stress" {
     value  = var.stop_condition_alarm_arn
   }
 
-  # ── 액션: chatbot 태스크에 CPU 90% 부하 8분 주입 ────────
-  # aws:ecs:task-memory-stress 미지원 → cpu-stress로 대체
-  # chatbot 서비스 CPU 과부하로 응답 지연 → ALB 헬스체크 실패 유도
+  # ── Phase 1: chatbot 태스크에 CPU 90% 부하 8분 주입 ──────
+  # ALB 헬스체크 타임아웃 유도 → UnhealthyHostCount 증가
+  # → MemoryUtilization/CPUUtilization 알람 트리거 → scale-out 검증
   action {
-    name        = "memory-stress-chatbot"
+    name        = "cpu-stress-chatbot"
     action_id   = "aws:ecs:task-cpu-stress"
-    description = "chatbot 서비스 CPU 90% 부하 주입 (8분, 메모리 스트레스 대체)"
+    description = "chatbot 서비스 CPU 90% 부하 주입 (8분) - ALB 헬스체크 실패 및 Auto Scaling 검증"
 
     parameter {
       key   = "duration"
@@ -49,14 +58,48 @@ resource "aws_fis_experiment_template" "ecs_memory_stress" {
 
     target {
       key   = "Tasks"
-      value = "ecs-chatbot-tasks-memory"
+      value = "ecs-chatbot-tasks-stress"
     }
   }
 
+  # ── Phase 2: 부하 주입 중 태스크 강제 종료 (5분 후) ──────
+  # CPU 과부하 상태에서 태스크 종료 → ECS 자동 재시작 검증
+  # Redis 세션 유지 여부 확인 포인트
+  action {
+    name        = "kill-stressed-tasks"
+    action_id   = "aws:ecs:stop-task"
+    description = "CPU 부하 중 chatbot 태스크 강제 종료 - ECS 자동 재시작 및 Redis 세션 유지 검증"
+
+    start_after = ["cpu-stress-chatbot"]
+
+    target {
+      key   = "Tasks"
+      value = "ecs-chatbot-tasks-kill"
+    }
+  }
+
+  # ── 타겟: chatbot 태스크 (CPU 부하용, ALL) ────────────────
   target {
-    name           = "ecs-chatbot-tasks-memory"
+    name           = "ecs-chatbot-tasks-stress"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
+
+    resource_tag {
+      key   = "Service"
+      value = "chatbot"
+    }
+
+    filter {
+      path   = "clusterArn"
+      values = [data.terraform_remote_state.compute.outputs.ecs_cluster_id]
+    }
+  }
+
+  # ── 타겟: chatbot 태스크 (강제 종료용, 50%) ──────────────
+  target {
+    name           = "ecs-chatbot-tasks-kill"
+    resource_type  = "aws:ecs:task"
+    selection_mode = "PERCENT(50)"
 
     resource_tag {
       key   = "Service"

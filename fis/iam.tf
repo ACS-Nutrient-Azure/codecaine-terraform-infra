@@ -104,6 +104,7 @@ resource "aws_iam_role_policy" "fis_network" {
           "ec2:DeleteNetworkAcl",
           "ec2:DeleteNetworkAclEntry",
           "ec2:DescribeNetworkAcls",
+          "ec2:DescribeNetworkAclAssociations",
           "ec2:DescribeSubnets",
           "ec2:DescribeVpcs",
           "ec2:ReplaceNetworkAclAssociation",
