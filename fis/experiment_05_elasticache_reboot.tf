@@ -31,7 +31,7 @@ resource "aws_fis_experiment_template" "elasticache_reboot" {
 
   stop_condition {
     source = "aws:cloudwatch:alarm"
-    value  = var.stop_condition_alarm_arn
+    value  = local.stop_condition_alarm_arn
   }
 
   # ── 액션: Private App Subnet 2a → Redis 방향 egress 차단 (8분) ──

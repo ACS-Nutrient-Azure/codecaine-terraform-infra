@@ -19,7 +19,7 @@ resource "aws_fis_experiment_template" "aurora_reboot" {
 
   stop_condition {
     source = "aws:cloudwatch:alarm"
-    value  = var.stop_condition_alarm_arn
+    value  = local.stop_condition_alarm_arn
   }
 
   # ── 액션: analysis-cluster Reader 재부팅 ──────────────────

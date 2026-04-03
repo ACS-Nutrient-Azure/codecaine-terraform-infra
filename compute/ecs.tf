@@ -195,6 +195,20 @@ resource "aws_iam_role_policy" "ecs_task_runtime" {
         ]
         Resource = "*"
       },
+      # FIS SSM Agent 사이드카용 - SSM Managed Instance 등록
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:CreateActivation",
+          "ssm:AddTagsToResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = aws_iam_role.ssm_managed_instance.arn
+      },
       # AgentCore 호출 권한 (analysis/chatbot 서비스 → AgentCore)
       {
         Effect   = "Allow"
@@ -202,6 +216,44 @@ resource "aws_iam_role_policy" "ecs_task_runtime" {
         Resource = "arn:aws:bedrock-agentcore:${var.region}:${data.aws_caller_identity.current.account_id}:runtime/*"
       }
     ]
+  })
+}
+
+# SSM Managed Instance Role (FIS SSM Agent 사이드카용)
+resource "aws_iam_role" "ssm_managed_instance" {
+  name = "${upper(var.project_name)}-${upper(var.environment)}-SSM-MANAGED-INSTANCE-ROLE"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ssm.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = { Name = "${upper(var.project_name)}-${upper(var.environment)}-SSM-MANAGED-INSTANCE-ROLE" }
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance_core" {
+  role       = aws_iam_role.ssm_managed_instance.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy" "ssm_managed_instance_cleanup" {
+  name = "ssm-managed-instance-cleanup"
+  role = aws_iam_role.ssm_managed_instance.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ssm:DeleteActivation",
+        "ssm:DeregisterManagedInstance"
+      ]
+      Resource = "*"
+    }]
   })
 }
 
@@ -278,6 +330,20 @@ resource "aws_iam_role_policy" "ecs_task_users_policy" {
           "ssmmessages:OpenDataChannel"
         ]
         Resource = "*"
+      },
+      # FIS SSM Agent 사이드카용
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:CreateActivation",
+          "ssm:AddTagsToResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = aws_iam_role.ssm_managed_instance.arn
       }
     ]
   })
@@ -365,6 +431,20 @@ resource "aws_iam_role_policy" "ecs_task_chatbot_s3" {
           "bedrock-agentcore:InvokeAgentRuntimeWithResponseStream",
         ]
         Resource = "*"
+      },
+      # FIS SSM Agent 사이드카용
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:CreateActivation",
+          "ssm:AddTagsToResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = aws_iam_role.ssm_managed_instance.arn
       }
     ]
   })
@@ -664,6 +744,33 @@ resource "aws_ecs_task_definition" "services" {
           "awslogs-group"         = aws_cloudwatch_log_group.services[each.key].name
           "awslogs-region"        = var.region
           "awslogs-stream-prefix" = "otel"
+        }
+      }
+    },
+    {
+      name      = "amazon-ssm-agent"
+      image     = "public.ecr.aws/amazon-ssm-agent/amazon-ssm-agent:latest"
+      essential = false
+      cpu       = 0
+
+      command = [
+        "/bin/bash", "-c",
+        "set -e; dnf upgrade -y; dnf install jq procps awscli -y; term_handler() { echo \"Deleting SSM activation $ACTIVATION_ID\"; if ! aws ssm delete-activation --activation-id $ACTIVATION_ID --region $ECS_TASK_REGION; then echo \"SSM activation $ACTIVATION_ID failed to be deleted\" 1>&2; fi; MANAGED_INSTANCE_ID=$(jq -e -r .ManagedInstanceID /var/lib/amazon/ssm/registration); echo \"Deregistering SSM Managed Instance $MANAGED_INSTANCE_ID\"; if ! aws ssm deregister-managed-instance --instance-id $MANAGED_INSTANCE_ID --region $ECS_TASK_REGION; then echo \"SSM Managed Instance $MANAGED_INSTANCE_ID failed to be deregistered\" 1>&2; fi; kill -SIGTERM $SSM_AGENT_PID; }; trap term_handler SIGTERM SIGINT; if [[ -z $MANAGED_INSTANCE_ROLE_NAME ]]; then echo \"Environment variable MANAGED_INSTANCE_ROLE_NAME not set, exiting\" 1>&2; exit 1; fi; if ! ps ax | grep amazon-ssm-agent | grep -v grep > /dev/null; then if [[ -n $ECS_CONTAINER_METADATA_URI_V4 ]] ; then echo \"Found ECS Container Metadata, running activation with metadata\"; TASK_METADATA=$(curl \"$${ECS_CONTAINER_METADATA_URI_V4}/task\"); ECS_TASK_AVAILABILITY_ZONE=$(echo $TASK_METADATA | jq -e -r '.AvailabilityZone'); ECS_TASK_ARN=$(echo $TASK_METADATA | jq -e -r '.TaskARN'); ECS_TASK_REGION=$(echo $ECS_TASK_AVAILABILITY_ZONE | sed 's/.$//'); CREATE_ACTIVATION_OUTPUT=$(aws ssm create-activation --iam-role $MANAGED_INSTANCE_ROLE_NAME --tags Key=ECS_TASK_AVAILABILITY_ZONE,Value=$ECS_TASK_AVAILABILITY_ZONE Key=ECS_TASK_ARN,Value=$ECS_TASK_ARN Key=FAULT_INJECTION_SIDECAR,Value=true --region $ECS_TASK_REGION); ACTIVATION_CODE=$(echo $CREATE_ACTIVATION_OUTPUT | jq -e -r .ActivationCode); ACTIVATION_ID=$(echo $CREATE_ACTIVATION_OUTPUT | jq -e -r .ActivationId); if ! amazon-ssm-agent -register -code $ACTIVATION_CODE -id $ACTIVATION_ID -region $ECS_TASK_REGION; then echo \"Failed to register with AWS Systems Manager (SSM), exiting\" 1>&2; exit 1; fi; amazon-ssm-agent & SSM_AGENT_PID=$!; wait $SSM_AGENT_PID; else echo \"ECS Container Metadata not found, exiting\" 1>&2; exit 1; fi; else echo \"SSM agent is already running, exiting\" 1>&2; exit 1; fi"
+      ]
+
+      environment = [
+        {
+          name  = "MANAGED_INSTANCE_ROLE_NAME"
+          value = aws_iam_role.ssm_managed_instance.name
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.services[each.key].name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ssm-agent"
         }
       }
     }

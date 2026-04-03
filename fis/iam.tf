@@ -38,6 +38,15 @@ resource "aws_iam_role_policy" "fis_ecs" {
           "ecs:ListTasks"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "TaggingForTargetResolution"
+        Effect = "Allow"
+        Action = [
+          "tag:GetResources",
+          "resourcegroupstaggingapi:GetResources"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -156,6 +165,8 @@ resource "aws_iam_role_policy" "fis_ssm" {
           "ssm:SendCommand",
           "ssm:GetCommandInvocation",
           "ssm:ListCommandInvocations",
+          "ssm:ListCommands",
+          "ssm:CancelCommand",
           "ssm:DescribeInstanceInformation"
         ]
         Resource = "*"

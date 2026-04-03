@@ -61,25 +61,9 @@ resource "aws_iam_instance_profile" "bastion" {
   role = aws_iam_role.bastion.name
 }
 
-# Latest Amazon Linux 2023 AMI
-data "aws_ami" "amazon_linux_2023" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
 # Bastion Host Instance
 resource "aws_instance" "bastion" {
-  ami                    = data.aws_ami.amazon_linux_2023.id
+  ami                    = "ami-00b3401e969d06397"
   instance_type          = var.bastion_instance_type
   key_name               = var.bastion_key_name # 기존 키 페어 사용 (tera-test.pem)
   subnet_id              = local.public_subnet_ids[0]

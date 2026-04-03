@@ -30,7 +30,7 @@ resource "aws_fis_experiment_template" "ecs_memory_stress" {
 
   stop_condition {
     source = "aws:cloudwatch:alarm"
-    value  = var.stop_condition_alarm_arn
+    value  = local.stop_condition_alarm_arn
   }
 
   # ── Phase 1: chatbot 태스크에 CPU 90% 부하 8분 주입 ──────
@@ -83,33 +83,15 @@ resource "aws_fis_experiment_template" "ecs_memory_stress" {
     name           = "ecs-chatbot-tasks-stress"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-
-    resource_tag {
-      key   = "Service"
-      value = "chatbot"
-    }
-
-    filter {
-      path   = "clusterArn"
-      values = [data.terraform_remote_state.compute.outputs.ecs_cluster_id]
-    }
+    resource_arns  = [var.ecs_task_arns["chatbot"]]
   }
 
   # ── 타겟: chatbot 태스크 (강제 종료용, 50%) ──────────────
   target {
     name           = "ecs-chatbot-tasks-kill"
     resource_type  = "aws:ecs:task"
-    selection_mode = "PERCENT(50)"
-
-    resource_tag {
-      key   = "Service"
-      value = "chatbot"
-    }
-
-    filter {
-      path   = "clusterArn"
-      values = [data.terraform_remote_state.compute.outputs.ecs_cluster_id]
-    }
+    selection_mode = "ALL"
+    resource_arns  = [var.ecs_task_arns["chatbot"]]
   }
 
   log_configuration {

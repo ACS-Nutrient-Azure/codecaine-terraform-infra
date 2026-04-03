@@ -51,7 +51,7 @@ resource "aws_fis_experiment_template" "gradual_ecs_degradation" {
 
   stop_condition {
     source = "aws:cloudwatch:alarm"
-    value  = var.stop_condition_alarm_arn
+    value  = local.stop_condition_alarm_arn
   }
 
   # ── Phase 1: users 서비스 CPU 95% 부하 주입 ──────────────

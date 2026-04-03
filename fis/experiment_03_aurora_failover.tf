@@ -22,7 +22,7 @@ resource "aws_fis_experiment_template" "aurora_failover" {
 
   stop_condition {
     source = "aws:cloudwatch:alarm"
-    value  = var.stop_condition_alarm_arn
+    value  = local.stop_condition_alarm_arn
   }
 
   # ── 액션 1: users-cluster 페일오버 ────────────────────────

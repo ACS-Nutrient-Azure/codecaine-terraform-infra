@@ -205,7 +205,10 @@ resource "aws_ecs_service" "dr" {
     ignore_changes = [desired_count, task_definition] # Failover Lambda가 관리
   }
 
-  tags = { Name = "${upper(var.project_name)}-${upper(var.environment)}-DR-${upper(each.key)}-SERVICE" }
+  tags = {
+    Name    = "${upper(var.project_name)}-${upper(var.environment)}-DR-${upper(each.key)}-SERVICE"
+    Service = each.key
+  }
 
   depends_on = [aws_lb_listener.dr_http, aws_lb_listener.dr_https]
 }

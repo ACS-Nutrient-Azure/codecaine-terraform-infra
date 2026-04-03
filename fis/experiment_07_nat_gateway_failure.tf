@@ -25,7 +25,7 @@ resource "aws_fis_experiment_template" "nat_gateway_failure" {
 
   stop_condition {
     source = "aws:cloudwatch:alarm"
-    value  = var.stop_condition_alarm_arn
+    value  = local.stop_condition_alarm_arn
   }
 
   # ── 액션: Private App Subnet egress 차단 (10분) ───────────
