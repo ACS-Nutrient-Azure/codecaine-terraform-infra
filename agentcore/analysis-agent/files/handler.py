@@ -38,19 +38,37 @@ def to_mg(amount: Decimal, unit: str | None, unit_cache: dict) -> Decimal:
     return amount * factor
 
 
-def build_intake_map(current_supplements: list[dict]) -> dict[str, Decimal]:
-    """현재 복용 영양제에서 영양소명 기준 일일 총 섭취량 집계"""
-    intake_map: dict[str, Decimal] = {}
-    for supp in current_supplements:
-        spd = int(supp.get("serving_per_day") or 1)
-        for ing in supp.get("ingredients", []):
-            name   = (ing.get("name") or "").strip()
-            amount = ing.get("amount")
-            if not name or amount is None:
-                continue
-            daily = Decimal(str(amount)) * spd
-            intake_map[name] = intake_map.get(name, Decimal("0")) + daily
-    return intake_map
+# def build_intake_map(current_supplements: list[dict]) -> dict[str, Decimal]:
+#     """현재 복용 영양제에서 영양소명 기준 일일 총 섭취량 집계"""
+#     intake_map: dict[str, Decimal] = {}
+#     for supp in current_supplements:
+#         spd = int(supp.get("serving_per_day") or 1)
+#         for ing in supp.get("ingredients", []):
+#             name   = (ing.get("name") or "").strip()
+#             amount = ing.get("amount")
+#             if not name or amount is None:
+#                 continue
+#             daily = Decimal(str(amount)) * spd
+#             intake_map[name] = intake_map.get(name, Decimal("0")) + daily
+#     return intake_map
+
+def build_intake_map(current_supplements: list[dict], unit_cache: dict =
+   None) -> dict[str, Decimal]:                                           
+      if unit_cache is None:                                
+          unit_cache = {}
+      intake_map: dict[str, Decimal] = {}                                 
+      for supp in current_supplements:
+          spd = int(supp.get("serving_per_day") or 1)                     
+          for ing in supp.get("ingredients", []):           
+              name   = (ing.get("name") or "").strip()
+              amount = ing.get("amount")
+              unit   = ing.get("unit") or "mg"                            
+              if not name or amount is None:
+                  continue                                                
+              daily_raw = Decimal(str(amount)) * spd                      
+              daily_mg  = to_mg(daily_raw, unit, unit_cache, name)
+              intake_map[name] = intake_map.get(name, Decimal("0")) + daily_mg                                                  
+      return intake_map
 
 
 def lambda_handler(event: dict, context) -> dict:
