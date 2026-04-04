@@ -65,28 +65,28 @@ resource "aws_fis_experiment_template" "ecs_task_kill" {
     name           = "ecs-users-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["users"]]
+    resource_arns  = var.ecs_task_arns["users"]
   }
 
   target {
     name           = "ecs-chatbot-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["chatbot"]]
+    resource_arns  = var.ecs_task_arns["chatbot"]
   }
 
   target {
     name           = "ecs-analysis-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["analysis"]]
+    resource_arns  = var.ecs_task_arns["analysis"]
   }
 
   target {
     name           = "ecs-history-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["history"]]
+    resource_arns  = var.ecs_task_arns["history"]
   }
 
   log_configuration {

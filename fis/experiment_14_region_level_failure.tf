@@ -109,18 +109,31 @@ resource "aws_fis_experiment_template" "region_level_failure" {
     }
   }
 
-  # ── 액션 3: Public Subnet 2c 완전 차단 (30초 후) ─────────
-  # 2a 차단 후 2c로 failover된 트래픽도 차단
+  # ── 액션 3: 30초 대기 ────────────────────────────────────
   action {
-    name        = "block-public-subnet-2c"
-    action_id   = "aws:network:disrupt-connectivity"
-    description = "Public Subnet 2c 완전 차단 (ALB 전체 외부 트래픽 불가)"
+    name        = "wait-30s"
+    action_id   = "aws:fis:wait"
+    description = "2a 차단 후 30초 대기"
 
     start_after = ["block-public-subnet-2a", "block-db-subnet-2a"]
 
     parameter {
       key   = "duration"
-      value = "PT19M" # 2a보다 30초 늦게 시작
+      value = "PT1M"
+    }
+  }
+
+  # ── 액션 4: Public Subnet 2c 완전 차단 (30초 후) ─────────
+  action {
+    name        = "block-public-subnet-2c"
+    action_id   = "aws:network:disrupt-connectivity"
+    description = "Public Subnet 2c 완전 차단 (ALB 전체 외부 트래픽 불가)"
+
+    start_after = ["wait-30s"]
+
+    parameter {
+      key   = "duration"
+      value = "PT20M"
     }
 
     parameter {
@@ -134,18 +147,17 @@ resource "aws_fis_experiment_template" "region_level_failure" {
     }
   }
 
-  # ── 액션 4: DB Subnet 2c 완전 차단 (30초 후, 동시) ───────
-  # Aurora 2c 인스턴스도 격리 → 전체 클러스터 연결 불가
+  # ── 액션 5: DB Subnet 2c 완전 차단 (30초 후, 동시) ───────
   action {
     name        = "block-db-subnet-2c"
     action_id   = "aws:network:disrupt-connectivity"
     description = "DB Subnet 2c 완전 차단 (Aurora 전체 연결 불가)"
 
-    start_after = ["block-public-subnet-2a", "block-db-subnet-2a"]
+    start_after = ["wait-30s"]
 
     parameter {
       key   = "duration"
-      value = "PT19M"
+      value = "PT20M"
     }
 
     parameter {

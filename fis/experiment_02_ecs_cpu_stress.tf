@@ -43,7 +43,7 @@ resource "aws_fis_experiment_template" "ecs_cpu_stress" {
     name           = "ecs-analysis-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["analysis"]]
+    resource_arns  = var.ecs_task_arns["analysis"]
   }
 
   log_configuration {

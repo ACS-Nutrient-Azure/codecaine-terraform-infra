@@ -93,21 +93,21 @@ resource "aws_fis_experiment_template" "multi_service_cascade" {
     name           = "cascade-analysis-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["analysis"]]
+    resource_arns  = var.ecs_task_arns["analysis"]
   }
 
   target {
     name           = "cascade-chatbot-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["chatbot"]]
+    resource_arns  = var.ecs_task_arns["chatbot"]
   }
 
   target {
     name           = "cascade-users-tasks"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["users"]]
+    resource_arns  = var.ecs_task_arns["users"]
   }
 
   log_configuration {

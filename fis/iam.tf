@@ -119,7 +119,11 @@ resource "aws_iam_role_policy" "fis_network" {
           "ec2:ReplaceNetworkAclAssociation",
           "ec2:DescribeInstances",
           "ec2:StopInstances",
-          "ec2:StartInstances"
+          "ec2:StartInstances",
+          "ec2:CreateTags",
+          "ec2:DeleteTags",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeTags"
         ]
         Resource = "*"
       }

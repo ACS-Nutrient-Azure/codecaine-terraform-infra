@@ -6,5 +6,5 @@ dr_region      = "ap-northeast-1"
 domain_name      = "codecaine.store"
 subdomain_prefix = "www"
 
-alarm_sns_email          = "your-team@example.com"
+alarm_sns_email          = "ahldb10@gmail.com"
 unhealthy_host_threshold = 3

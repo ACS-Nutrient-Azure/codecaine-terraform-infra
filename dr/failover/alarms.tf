@@ -98,7 +98,10 @@ resource "aws_cloudwatch_composite_alarm" "aurora_layer_failure" {
   alarm_rule = join(" OR ", [
     "ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster1"].alarm_name}) AND ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster2"].alarm_name})",
     "ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster1"].alarm_name}) AND ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster3"].alarm_name})",
+    "ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster1"].alarm_name}) AND ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster4"].alarm_name})",
     "ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster2"].alarm_name}) AND ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster3"].alarm_name})",
+    "ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster2"].alarm_name}) AND ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster4"].alarm_name})",
+    "ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster3"].alarm_name}) AND ALARM(${aws_cloudwatch_metric_alarm.aurora_connections["cluster4"].alarm_name})",
   ])
 
   alarm_description = "DR: Aurora 레이어 장애 (2개 이상 클러스터 연결 불가)"
@@ -183,4 +186,13 @@ resource "aws_cloudwatch_event_target" "dr_failback_step_functions" {
   target_id = "dr-failback-step-functions"
   arn       = aws_sfn_state_machine.dr_failback_orchestrator.arn
   role_arn  = aws_iam_role.eventbridge_sfn.arn
+}
+
+# ── 서울 Aurora 클러스터 ARN SSM 파라미터 (Failback Lambda 참조용) ──
+resource "aws_ssm_parameter" "primary_aurora_cluster_arns" {
+  name  = "/${var.project_name}/${var.environment}/aurora-cluster-arns"
+  type  = "String"
+  value = jsonencode(data.terraform_remote_state.primary_db.outputs.aurora_cluster_arns)
+
+  tags = { Name = "${upper(var.project_name)}-${upper(var.environment)}-AURORA-CLUSTER-ARNS" }
 }

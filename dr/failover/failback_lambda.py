@@ -70,7 +70,11 @@ def check_primary_health(event):
     try:
         req = urllib.request.Request(health_url, method="GET")
         req.add_header("User-Agent", "DR-Failback-HealthCheck/1.0")
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
             status_code = resp.status
             logger.info(f"헬스체크 응답: HTTP {status_code}")
             if status_code == 200:

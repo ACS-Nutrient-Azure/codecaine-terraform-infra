@@ -50,6 +50,12 @@ resource "aws_iam_role_policy" "failover_lambda_policy" {
         Action   = ["ssm:GetParameter", "ssm:PutParameter"]
         Resource = "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/*"
       },
+      # Secrets Manager (서울 secret 읽기 + 도쿄 secret 생성/업데이트)
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:PutSecretValue", "secretsmanager:CreateSecret", "secretsmanager:DescribeSecret"]
+        Resource = "arn:aws:secretsmanager:*:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}-${var.environment}-*"
+      },
       # SNS 알림
       {
         Effect   = "Allow"

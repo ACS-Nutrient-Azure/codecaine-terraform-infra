@@ -40,12 +40,7 @@ resource "aws_rds_cluster" "aurora_cluster1" {
   skip_final_snapshot       = var.environment == "dev" ? true : false
   final_snapshot_identifier = var.environment == "dev" ? null : "${var.project_name}-${var.environment}-${var.aurora_clusters["cluster1"].cluster_identifier}-final-snapshot"
 
-  deletion_protection = var.environment == "prd" ? true : false
-
-  serverlessv2_scaling_configuration {
-    max_capacity = var.aurora_clusters["cluster1"].serverless_max_capacity
-    min_capacity = var.aurora_clusters["cluster1"].serverless_min_capacity
-  }
+  deletion_protection = false
 
   tags = {
     Name = "${var.project_name}-${var.environment}-${var.aurora_clusters["cluster1"].cluster_identifier}"

@@ -65,7 +65,7 @@ def aurora_failover(event):
         ssm.get_parameter(Name=DR_CLUSTER_ARNS_SSM_KEY)["Parameter"]["Value"]
     )
 
-    results = {}
+    # 모든 클러스터 Failover 동시 시작
     for key, global_id in AURORA_GLOBAL_CLUSTERS.items():
         try:
             rds.failover_global_cluster(
@@ -73,10 +73,32 @@ def aurora_failover(event):
                 TargetDbClusterIdentifier=dr_cluster_arns[key],
             )
             logger.info(f"Aurora failover initiated: {global_id} → {dr_cluster_arns[key]}")
-            results[key] = "initiated"
         except Exception as e:
             logger.error(f"Aurora failover failed for {global_id}: {e}")
-            results[key] = f"error: {e}"
+
+    # 모든 클러스터 Failover 완료 대기 (도쿄가 IsWriter=true 될 때까지, 최대 5분)
+    results = {}
+    for key, global_id in AURORA_GLOBAL_CLUSTERS.items():
+        dr_arn = dr_cluster_arns[key]
+        completed = False
+        for attempt in range(30):
+            try:
+                resp = rds.describe_global_clusters(GlobalClusterIdentifier=global_id)
+                members = resp["GlobalClusters"][0]["GlobalClusterMembers"]
+                dr_writer = next((m for m in members if m["DBClusterArn"] == dr_arn and m["IsWriter"]), None)
+                if dr_writer:
+                    logger.info(f"Aurora failover completed: {global_id} → {dr_arn} is now Primary")
+                    results[key] = "completed"
+                    completed = True
+                    break
+                logger.info(f"Waiting for {global_id} failover... attempt {attempt + 1}/30")
+            except Exception as e:
+                logger.warning(f"describe_global_clusters error for {global_id}: {e}")
+            time.sleep(10)
+
+        if not completed:
+            logger.error(f"Aurora failover timed out for {global_id}")
+            results[key] = "timeout"
 
     return {"action": "aurora_failover", "results": results}
 
@@ -177,9 +199,24 @@ def update_ssm_endpoints(event):
             db_name  = cluster["DatabaseName"]
 
             base_key = f"/{PROJECT_NAME}/{ENVIRONMENT}/rds/{service}-cluster"
-            ssm.put_parameter(Name=f"{base_key}/endpoint",  Value=endpoint, Type="String", Overwrite=True)
-            ssm.put_parameter(Name=f"{base_key}/port",      Value=port,     Type="String", Overwrite=True)
-            ssm.put_parameter(Name=f"{base_key}/dbname",    Value=db_name,  Type="String", Overwrite=True)
+            ssm.put_parameter(Name=f"{base_key}/endpoint",  Value=endpoint,                    Type="String", Overwrite=True)
+            ssm.put_parameter(Name=f"{base_key}/port",      Value=port,                        Type="String", Overwrite=True)
+            ssm.put_parameter(Name=f"{base_key}/dbname",    Value=db_name,                     Type="String", Overwrite=True)
+            ssm.put_parameter(Name=f"{base_key}/username",  Value=cluster["MasterUsername"],   Type="String", Overwrite=True)
+
+            # Secrets Manager: 서울 secret을 도쿄에 복제 (없는 경우)
+            secret_name = f"{PROJECT_NAME}-{ENVIRONMENT}-{service}-cluster-secret"
+            sm_primary = boto3.client("secretsmanager", region_name=PRIMARY_REGION)
+            sm_dr      = boto3.client("secretsmanager", region_name=DR_REGION)
+            try:
+                secret_value = sm_primary.get_secret_value(SecretId=secret_name)["SecretString"]
+                try:
+                    sm_dr.put_secret_value(SecretId=secret_name, SecretString=secret_value)
+                except sm_dr.exceptions.ResourceNotFoundException:
+                    sm_dr.create_secret(Name=secret_name, SecretString=secret_value)
+                logger.info(f"Secret synced for {service}")
+            except Exception as e:
+                logger.warning(f"Secret sync failed for {service}: {e}")
 
             logger.info(f"SSM updated for {service}: {endpoint}")
             results[service] = endpoint

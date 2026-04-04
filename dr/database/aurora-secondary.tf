@@ -39,15 +39,12 @@ resource "aws_rds_cluster" "dr_cluster1" {
 
   db_subnet_group_name   = local.db_subnet_group_name
   vpc_security_group_ids = [local.rds_sg_id]
+  kms_key_id             = var.dr_kms_key_id
+  storage_encrypted      = true
 
   # Secondary는 master_username/password 불필요 (Global DB가 복제)
   skip_final_snapshot = true
   deletion_protection = false
-
-  serverlessv2_scaling_configuration {
-    min_capacity = var.dr_serverless_min_capacity
-    max_capacity = var.dr_serverless_max_capacity
-  }
 
   lifecycle {
     ignore_changes = [replication_source_identifier, global_cluster_identifier]
@@ -59,7 +56,7 @@ resource "aws_rds_cluster" "dr_cluster1" {
 resource "aws_rds_cluster_instance" "dr_cluster1" {
   identifier         = "${var.project_name}-${var.environment}-dr-users-cluster-ro"
   cluster_identifier = aws_rds_cluster.dr_cluster1.id
-  instance_class     = "db.serverless"
+  instance_class     = var.dr_instance_class
   engine             = "aurora-postgresql"
   engine_version     = var.aurora_postgres_version
 
@@ -83,14 +80,11 @@ resource "aws_rds_cluster" "dr_cluster2" {
 
   db_subnet_group_name   = local.db_subnet_group_name
   vpc_security_group_ids = [local.rds_sg_id]
+  kms_key_id             = var.dr_kms_key_id
+  storage_encrypted      = true
 
   skip_final_snapshot = true
   deletion_protection = false
-
-  serverlessv2_scaling_configuration {
-    min_capacity = var.dr_serverless_min_capacity
-    max_capacity = var.dr_serverless_max_capacity
-  }
 
   lifecycle {
     ignore_changes = [replication_source_identifier, global_cluster_identifier]
@@ -102,7 +96,7 @@ resource "aws_rds_cluster" "dr_cluster2" {
 resource "aws_rds_cluster_instance" "dr_cluster2" {
   identifier         = "${var.project_name}-${var.environment}-dr-history-cluster-ro"
   cluster_identifier = aws_rds_cluster.dr_cluster2.id
-  instance_class     = "db.serverless"
+  instance_class     = var.dr_instance_class
   engine             = "aurora-postgresql"
   engine_version     = var.aurora_postgres_version
 
@@ -126,14 +120,11 @@ resource "aws_rds_cluster" "dr_cluster3" {
 
   db_subnet_group_name   = local.db_subnet_group_name
   vpc_security_group_ids = [local.rds_sg_id]
+  kms_key_id             = var.dr_kms_key_id
+  storage_encrypted      = true
 
   skip_final_snapshot = true
   deletion_protection = false
-
-  serverlessv2_scaling_configuration {
-    min_capacity = var.dr_serverless_min_capacity
-    max_capacity = var.dr_serverless_max_capacity
-  }
 
   lifecycle {
     ignore_changes = [replication_source_identifier, global_cluster_identifier]
@@ -145,7 +136,7 @@ resource "aws_rds_cluster" "dr_cluster3" {
 resource "aws_rds_cluster_instance" "dr_cluster3" {
   identifier         = "${var.project_name}-${var.environment}-dr-analysis-cluster-ro"
   cluster_identifier = aws_rds_cluster.dr_cluster3.id
-  instance_class     = "db.serverless"
+  instance_class     = var.dr_instance_class
   engine             = "aurora-postgresql"
   engine_version     = var.aurora_postgres_version
 
@@ -169,14 +160,11 @@ resource "aws_rds_cluster" "dr_cluster4" {
 
   db_subnet_group_name   = local.db_subnet_group_name
   vpc_security_group_ids = [local.rds_sg_id]
+  kms_key_id             = var.dr_kms_key_id
+  storage_encrypted      = true
 
   skip_final_snapshot = true
   deletion_protection = false
-
-  serverlessv2_scaling_configuration {
-    min_capacity = var.dr_serverless_min_capacity
-    max_capacity = var.dr_serverless_max_capacity
-  }
 
   lifecycle {
     ignore_changes = [replication_source_identifier, global_cluster_identifier]
@@ -188,7 +176,7 @@ resource "aws_rds_cluster" "dr_cluster4" {
 resource "aws_rds_cluster_instance" "dr_cluster4" {
   identifier         = "${var.project_name}-${var.environment}-dr-chatbot-cluster-ro"
   cluster_identifier = aws_rds_cluster.dr_cluster4.id
-  instance_class     = "db.serverless"
+  instance_class     = var.dr_instance_class
   engine             = "aurora-postgresql"
   engine_version     = var.aurora_postgres_version
 

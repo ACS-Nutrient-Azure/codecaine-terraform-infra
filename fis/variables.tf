@@ -30,13 +30,13 @@ variable "notification_email" {
 # aws ecs list-tasks --cluster cdci-prd-cluster --service-name cdci-prd-<service>-service --region ap-northeast-2
 
 variable "ecs_task_arns" {
-  description = "현재 실행 중인 ECS 태스크 ARN 맵 (실험 전 업데이트 필요)"
-  type        = map(string)
+  description = "현재 실행 중인 ECS 태스크 ARN 리스트 맵 (실험 전 업데이트 필요)"
+  type        = map(list(string))
   default = {
-    users    = ""
-    history  = ""
-    chatbot  = ""
-    analysis = ""
-    frontend = ""
+    users    = []
+    history  = []
+    chatbot  = []
+    analysis = []
+    frontend = []
   }
 }

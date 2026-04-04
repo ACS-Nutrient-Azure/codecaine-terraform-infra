@@ -79,11 +79,12 @@ resource "aws_fis_experiment_template" "ecs_memory_stress" {
   }
 
   # ── 타겟: chatbot 태스크 (CPU 부하용, ALL) ────────────────
+  # ── 타겟: chatbot 태스크 (CPU 부하용, ALL) ────────────────
   target {
     name           = "ecs-chatbot-tasks-stress"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["chatbot"]]
+    resource_arns  = var.ecs_task_arns["chatbot"]
   }
 
   # ── 타겟: chatbot 태스크 (강제 종료용, 50%) ──────────────
@@ -91,7 +92,7 @@ resource "aws_fis_experiment_template" "ecs_memory_stress" {
     name           = "ecs-chatbot-tasks-kill"
     resource_type  = "aws:ecs:task"
     selection_mode = "ALL"
-    resource_arns  = [var.ecs_task_arns["chatbot"]]
+    resource_arns  = var.ecs_task_arns["chatbot"]
   }
 
   log_configuration {

@@ -2,8 +2,9 @@
 # security 모듈 remote state에서 zone_id 직접 참조
 
 locals {
-  route53_zone_id       = data.terraform_remote_state.security.outputs.route53_zone_id
-  create_route53_record = local.route53_zone_id != "" && var.domain_name != ""
+  route53_zone_id = data.terraform_remote_state.security.outputs.route53_zone_id
+  # dr/failover 모듈에서 failover 레코드로 관리하므로 여기서는 생성하지 않음
+  create_route53_record = false
 }
 
 data "aws_route53_zone" "main" {
