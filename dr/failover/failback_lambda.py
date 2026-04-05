@@ -60,6 +60,14 @@ def check_primary_health(event):
     - /health 엔드포인트 HTTP 200 응답 확인
     - 실패 시 Step Functions에서 Wait 후 재시도
     """
+    # Failback 시작 시 Failover EventBridge 규칙 비활성화 (루프 방지)
+    events = boto3.client("events", region_name=PRIMARY_REGION)
+    failover_rule = f"{PROJECT_NAME}-{ENVIRONMENT}-dr-trigger"
+    try:
+        events.disable_rule(Name=failover_rule)
+        logger.info(f"Failover EventBridge 규칙 비활성화: {failover_rule}")
+    except Exception as e:
+        logger.warning(f"Failover 규칙 비활성화 실패 (무시): {e}")
     alb_dns = PRIMARY_ALB_DNS
     if not alb_dns:
         raise ValueError("PRIMARY_ALB_DNS 환경변수가 설정되지 않았습니다")
@@ -318,6 +326,15 @@ def cleanup_dr_agentcore(event):
 
 def notify(event):
     """Failback 완료/실패 SNS 알림"""
+    # Failback 완료 시 Failover EventBridge 규칙 재활성화
+    events_client = boto3.client("events", region_name=PRIMARY_REGION)
+    failover_rule = f"{PROJECT_NAME}-{ENVIRONMENT}-dr-trigger"
+    try:
+        events_client.enable_rule(Name=failover_rule)
+        logger.info(f"Failover EventBridge 규칙 재활성화: {failover_rule}")
+    except Exception as e:
+        logger.warning(f"Failover 규칙 재활성화 실패 (무시): {e}")
+
     sns = boto3.client("sns", region_name=PRIMARY_REGION)
     status  = event.get("status", "UNKNOWN")
     message = event.get("message", "")

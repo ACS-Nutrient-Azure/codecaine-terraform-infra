@@ -12,9 +12,24 @@ notification_email = "ahldb10@gmail.com"
 # 조회 명령어:
 # aws ecs list-tasks --cluster cdci-prd-cluster --service-name cdci-prd-<service>-service --region ap-northeast-2
 ecs_task_arns = {
-  users    = ["arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/1352f222158041bbb0a97044c99d14d8"]
-  history  = ["arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/3257e8f3b8ab4306848d1952e3dc4c91"]
-  chatbot  = ["arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/7555c0eae7cd4d93b966b1157a77c73f"]
-  analysis = ["arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/6bdfbb1971724547930e685c518207dd"]
-  frontend = ["arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/3117db479b36482b890b60fbe637e2c0", "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/4aa928dcc6664d9cb7eca2a4e64b917b"]
+  users    = [
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/4271e0b6eafd4bee9fcfbbb2fa066030",
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/47392d78c83f45c4a51781ab4bfe5933"
+    ]
+  history  = [
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/0b59847c821f481688bae38f8379ce5a",
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/e38393b46224441e887eadfcac35a9ca"
+    ]
+  chatbot  = [
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/7605dc708ac947a0b3a8a63b6e6effc6", 
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/46455548b6ab43149b23c67952077e3a"
+    ]
+  analysis = [
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/61c81c31ac214c758b7f24a78b205ed9",
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/2929a01d05544bcfac8a6fe6c5a257e5"
+    ]
+  frontend = [
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/6ede4c4ff2eb4d55943b3a8655a50b47",
+    "arn:aws:ecs:ap-northeast-2:620758375333:task/cdci-prd-cluster/bcb0fcd4a67549b18d5f3fb795fc8c8a"
+    ]
 }

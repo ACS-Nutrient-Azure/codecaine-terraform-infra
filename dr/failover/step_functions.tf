@@ -297,6 +297,12 @@ resource "aws_iam_role_policy" "failback_lambda_policy" {
         Action   = ["sns:Publish"]
         Resource = aws_sns_topic.dr_alert.arn
       },
+      # EventBridge 규칙 제어 (Failover 루프 방지)
+      {
+        Effect   = "Allow"
+        Action   = ["events:EnableRule", "events:DisableRule"]
+        Resource = "arn:aws:events:${var.primary_region}:${data.aws_caller_identity.current.account_id}:rule/${var.project_name}-${var.environment}-dr-trigger"
+      },
       # STS (account ID 조회)
       {
         Effect   = "Allow"
